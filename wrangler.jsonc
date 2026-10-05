@@ -17,6 +17,7 @@
       "vars": {
         "ACCOUNTS_URL": "http://localhost:3001",
         "CDN_BASE_URL": "http://localhost:8788",
+        "GIT_BRANCH": "local",
         "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/karasu256",
         "INTERNAL_API_SECRET": "local-development-internal-api-secret",
       },
@@ -28,6 +29,7 @@
       "vars": {
         "ACCOUNTS_URL": "https://dev.accounts.karasu256.com",
         "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
+        "GIT_BRANCH": "unknown",
       },
     },
     "preview": {
@@ -36,6 +38,7 @@
       "vars": {
         "ACCOUNTS_URL": "https://dev.accounts.karasu256.com",
         "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
+        "GIT_BRANCH": "dev",
       },
     },
     "production": {
@@ -44,6 +47,7 @@
       "vars": {
         "ACCOUNTS_URL": "https://accounts.karasu256.com",
         "CDN_BASE_URL": "https://cdn.karasu256.com",
+        "GIT_BRANCH": "main",
       },
     },
   },

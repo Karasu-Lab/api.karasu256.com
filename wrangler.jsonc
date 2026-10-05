@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "api-karasu256-com",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false,
+    },
+  },
+  "env": {
+    "local": {
+      "routes": [],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "local-hyperdrive",
+          "localConnectionString": "postgres://postgres:postgres@localhost:5433/karasu256",
+        },
+      ],
+      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-api-local" }],
+      "vars": {
+        "ACCOUNTS_URL": "http://localhost:3001",
+        "CDN_BASE_URL": "http://localhost:8788",
+        "INTERNAL_API_SECRET": "local-development-internal-api-secret",
+      },
+    },
+    "preview": {
+      "routes": [{ "pattern": "dev.api.karasu256.com", "custom_domain": true }],
+      // Replace with the id printed by `wrangler hyperdrive create api-karasu256-com-preview`.
+      "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" }],
+      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
+      "vars": {
+        "ACCOUNTS_URL": "https://dev.accounts.karasu256.com",
+        "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
+      },
+    },
+    "production": {
+      "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
+      // Replace with the id printed by `wrangler hyperdrive create api-karasu256-com`.
+      "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000" }],
+      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn" }],
+      "vars": {
+        "ACCOUNTS_URL": "https://accounts.karasu256.com",
+        "CDN_BASE_URL": "https://cdn.karasu256.com",
+      },
+    },
+  },
+}

@@ -2,6 +2,8 @@ export {};
 
 declare global {
   interface Env {
+    /** Provisioned with `wrangler secret put` so the database credentials are never committed. */
+    DATABASE_URL: string;
     /** Provisioned with `wrangler secret put` so it is never committed; must match accounts' `INTERNAL_API_SECRET`. */
     INTERNAL_API_SECRET: string;
     /** Only set where the accounts deployment this worker calls has Vercel Deployment Protection enabled. */

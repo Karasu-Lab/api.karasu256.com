@@ -21,6 +21,15 @@
         "INTERNAL_API_SECRET": "local-development-internal-api-secret",
       },
     },
+    "branch": {
+      "routes": [],
+      "workers_dev": true,
+      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
+      "vars": {
+        "ACCOUNTS_URL": "https://dev.accounts.karasu256.com",
+        "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
+      },
+    },
     "preview": {
       "routes": [{ "pattern": "dev.api.karasu256.com", "custom_domain": true }],
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],

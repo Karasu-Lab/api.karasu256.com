@@ -50,12 +50,23 @@ async function verifyOauthToken(token: string, env: Env): Promise<RouteAuthConte
   }
 }
 
+/** better-auth's jwt plugin signs session JWTs (`set-auth-jwt` on `get-session`) with the same keys, but issued for the bare origin. */
+async function verifySessionJwt(token: string, env: Env): Promise<RouteAuthContext | null> {
+  try {
+    const { payload } = await jwtVerify(token, getJwks(oauthIssuer(env)), { issuer: env.AUTH_URL, audience: env.AUTH_URL });
+    if (!payload.sub) return null;
+    return { userId: payload.sub, authMethod: 'session', permissions: null, scopes: null };
+  } catch {
+    return null;
+  }
+}
+
 export async function authenticate(request: Request, env: Env): Promise<RouteAuthContext | null> {
   const header = request.headers.get('authorization');
   if (!header?.startsWith('Bearer ')) return null;
   const token = header.slice(7);
   if (!token) return null;
-  return (await authenticateApiKey(token, env)) ?? (await verifyOauthToken(token, env));
+  return (await authenticateApiKey(token, env)) ?? (await verifyOauthToken(token, env)) ?? (await verifySessionJwt(token, env));
 }
 
 /** Service-to-service calls from accounts carry a shared secret instead of a user credential. */

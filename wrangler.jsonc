@@ -33,7 +33,7 @@
       },
     },
     "preview": {
-      "routes": [{ "pattern": "dev.api.karasu256.com", "custom_domain": true }],
+      "routes": [{ "pattern": "dev-api.karasu256.com", "custom_domain": true }],
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
       "vars": {
         "AUTH_URL": "https://dev-auth.karasu256.com",

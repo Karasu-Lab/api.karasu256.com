@@ -25,6 +25,7 @@
     "branch": {
       "routes": [],
       "workers_dev": true,
+      "preview_urls": true,
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
       "vars": {
         "AUTH_URL": "https://dev-auth.karasu256.com",

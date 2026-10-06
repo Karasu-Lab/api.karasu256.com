@@ -8,7 +8,7 @@ const jwksByIssuer = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 /** better-auth's issuer, audience and JWKS live under its `/api/auth` mount path, not the bare origin. */
 function oauthIssuer(env: Env): string {
-  return `${env.ACCOUNTS_URL}/api/auth`;
+  return `${env.AUTH_URL}/api/auth`;
 }
 
 function getJwks(issuer: string): ReturnType<typeof createRemoteJWKSet> {
@@ -19,9 +19,9 @@ function getJwks(issuer: string): ReturnType<typeof createRemoteJWKSet> {
   return jwks;
 }
 
-/** Key validity stays with better-auth in accounts; which permissions the key carries is resolved here. */
+/** Key validity stays with better-auth in auth.karasu256.com; which permissions the key carries is resolved here. */
 export async function verifyApiKey(token: string, env: Env): Promise<{ userId: string; keyId: string; permissions: Permission[] } | null> {
-  const res = await fetch(`${env.ACCOUNTS_URL}/api/api-keys/verify`, {
+  const res = await fetch(`${env.AUTH_URL}/api/api-keys/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...vercelProtectionBypassHeaders(env.VERCEL_PROTECTION_BYPASS_SECRET) },
     body: JSON.stringify({ key: token }),

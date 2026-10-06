@@ -1,6 +1,7 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const ACCOUNTS_URL = 'http://localhost:3001';
+const AUTH_URL = 'http://localhost:3004';
 
 const PNG_1X1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==', 'base64');
 
@@ -12,8 +13,8 @@ interface GrantablePermission {
 
 async function signUp(request: APIRequestContext): Promise<string> {
   const email = `e2e-api-${Date.now()}-${crypto.randomUUID()}@example.test`;
-  const res = await request.post(`${ACCOUNTS_URL}/api/auth/sign-up/email`, {
-    headers: { Origin: ACCOUNTS_URL },
+  const res = await request.post(`${AUTH_URL}/api/auth/sign-up/email`, {
+    headers: { Origin: AUTH_URL },
     data: { email, password: `pw-${crypto.randomUUID()}`, name: email },
   });
   expect(res.ok()).toBeTruthy();

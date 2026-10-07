@@ -66,7 +66,7 @@ export async function authenticate(request: Request, env: Env): Promise<RouteAut
   if (!header?.startsWith('Bearer ')) return null;
   const token = header.slice(7);
   if (!token) return null;
-  return (await authenticateApiKey(token, env)) ?? (await verifyOauthToken(token, env)) ?? (await verifySessionJwt(token, env));
+  return (await verifyOauthToken(token, env)) ?? (await verifySessionJwt(token, env)) ?? (await authenticateApiKey(token, env));
 }
 
 /** Service-to-service calls from accounts carry a shared secret instead of a user credential. */

@@ -15,7 +15,7 @@
       "routes": [],
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-api-local" }],
       "vars": {
-        "AUTH_URL": "http://localhost:3004",
+        "AUTH_URL": "https://local-auth.karasu256.com",
         "CDN_BASE_URL": "http://localhost:8788",
         "GIT_BRANCH": "local",
         "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/karasu256",

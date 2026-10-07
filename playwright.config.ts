@@ -11,6 +11,12 @@ export default defineConfig({
   },
   webServer: [
     {
+      command: 'pnpm --filter api-auth.karasu256.com dev',
+      url: 'http://localhost:8790/api/auth/ok',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
       command: 'pnpm --filter auth.karasu256.com dev',
       url: 'http://localhost:3004/sign-in',
       reuseExistingServer: !process.env.CI,

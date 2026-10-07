@@ -15,7 +15,7 @@
       "routes": [],
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-api-local" }],
       "vars": {
-        "AUTH_URL": "https://local-auth.karasu256.com",
+        "AUTH_URL": "https://local-api-auth.karasu256.com",
         "CDN_BASE_URL": "http://localhost:8788",
         "GIT_BRANCH": "local",
         "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/karasu256",
@@ -28,7 +28,7 @@
       "preview_urls": true,
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
       "vars": {
-        "AUTH_URL": "https://dev-auth.karasu256.com",
+        "AUTH_URL": "https://dev-api-auth.karasu256.com",
         "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
         "GIT_BRANCH": "unknown",
       },
@@ -37,7 +37,7 @@
       "routes": [{ "pattern": "dev-api.karasu256.com", "custom_domain": true }],
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
       "vars": {
-        "AUTH_URL": "https://dev-auth.karasu256.com",
+        "AUTH_URL": "https://dev-api-auth.karasu256.com",
         "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
         "GIT_BRANCH": "dev",
       },
@@ -46,7 +46,7 @@
       "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
       "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn" }],
       "vars": {
-        "AUTH_URL": "https://auth.karasu256.com",
+        "AUTH_URL": "https://api-auth.karasu256.com",
         "CDN_BASE_URL": "https://cdn.karasu256.com",
         "GIT_BRANCH": "main",
       },

@@ -18,6 +18,14 @@
     "GIT_BRANCH": "main",
   },
   "preview_urls": true,
+  "previews": {
+    "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
+    "vars": {
+      "AUTH_URL": "https://dev-api-auth.karasu256.com",
+      "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
+      "GIT_BRANCH": "preview",
+    },
+  },
   "env": {
     "local": {
       "routes": [],

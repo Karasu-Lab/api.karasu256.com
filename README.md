@@ -1,6 +1,6 @@
 # api.karasu256.com
 
-The public API worker for Karasu Lab, running on Cloudflare Workers. Split out of [Karasu-Lab/karasu256.com](https://github.com/Karasu-Lab/karasu256.com).
+The public API worker for Karasu Lab, running on Cloudflare Workers. Split out of [Karasu-Lab/Karasu-Lab](https://github.com/Karasu-Lab/Karasu-Lab).
 
 ## Required environment variables
 

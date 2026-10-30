@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { permissionBitmask } from '@Hashibutogarasu/api-permissions';
+import { permissionBitmask } from '@karasu-lab/api-permissions';
 import { verifyApiKey } from '../lib/auth';
 
 /** Lets other resource servers check a key without each resolving permissions on their own. */

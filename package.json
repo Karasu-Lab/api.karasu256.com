@@ -22,8 +22,8 @@
     "yaml": "^2.9.0"
   },
   "dependencies": {
-    "@Hashibutogarasu/api-permissions": "workspace:*",
-    "@Hashibutogarasu/utils": "workspace:*",
+    "@karasu-lab/api-permissions": "0.1.0-4efb331",
+    "@karasu-lab/utils": "0.1.0-967de79",
     "elysia": "^1.4.29",
     "jose": "^6.2.5",
     "pg": "^8.23.1",

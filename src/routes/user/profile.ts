@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { Permissions, isPermitted, type AbstractPermission, type RouteAuthContext } from '@Hashibutogarasu/api-permissions';
+import { Permissions, isPermitted, type AbstractPermission, type RouteAuthContext } from '@karasu-lab/api-permissions';
 import { withDataSource } from '../../db/data-source';
 import { User } from '../../db/entities/user';
 import { authenticate } from '../../lib/auth';

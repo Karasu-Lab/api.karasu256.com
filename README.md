@@ -4,7 +4,7 @@ The public API worker for Karasu Lab, running on Cloudflare Workers. Split out o
 
 ## Required environment variables
 
-The deploy workflow (`.github/workflows/api-deploy.yml`) reads the following GitHub Actions secrets and variables. Register them on this repository under exactly these names. Values are never committed to the repository.
+The deploy workflow (`.github/workflows/api-deploy.yml`) reads the following GitHub Actions secrets and variables, organized by GitHub Environments. The production job runs in the `production` environment and the preview job in the `preview` environment (a `development` environment also exists); register each name at repository level as the default, and override it inside an environment only where that environment needs a different value — a name an environment does not define falls back to the repository-level entry. Values are never committed to the repository.
 
 ### Deployment
 
@@ -15,7 +15,7 @@ The deploy workflow (`.github/workflows/api-deploy.yml`) reads the following Git
 
 ### Worker secrets
 
-These are synced to the production worker on every deploy to `main`. Branch previews use the same values.
+These are synced to the worker on every deploy; previews resolve the same names from the `preview` environment.
 
 | Name | Used for |
 | --- | --- |

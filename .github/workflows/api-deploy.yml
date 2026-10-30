@@ -1,68 +1,35 @@
-# Moved from Karasu-Lab/Karasu-Lab/.github/workflows/api-deploy.yml.
-# This app depends on workspace packages, so the deploy still builds in
-# the hub repository's tree: this workflow clones the hub (with its
-# submodules) and pins this app's submodule to the commit that triggered
-# the run. It requires the hub's dev branch to carry the submodule
-# layout, and this repository to hold the Actions secrets and variables
-# referenced below under the same names.
-#
-# Secrets and variables are organized by GitHub Environments: the deploy
-# job runs in the `production` environment and the preview job in the
-# `preview` environment, and any name an environment does not define
-# falls back to the repository-level secret or variable — there are no
-# prefixed duplicates.
-name: api.karasu256.com Deploy
+name: API Deploy
 
 on:
   push:
+    branches: ["**"]
   workflow_dispatch:
 
-concurrency:
-  group: api-deploy-${{ github.ref_name }}
-  cancel-in-progress: false
-
-jobs:
   deploy:
     if: github.ref_name == 'main'
     environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
+      VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
     steps:
-      - name: Assemble the workspace from the hub repository
-        run: |
-          git clone --recurse-submodules --branch dev https://github.com/Karasu-Lab/Karasu-Lab.git .
-          git -C apps/api.karasu256.com fetch origin "${{ github.sha }}"
-          git -C apps/api.karasu256.com checkout --detach "${{ github.sha }}"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Deploy the worker
+        uses: Karasu-Lab/Workers/deploy-worker@v1
         with:
-          node-version: 24
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Deploy to production
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm --filter api.karasu256.com deploy
-
-      - name: Sync worker secrets
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
-          VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
-        run: |
-          node .github/scripts/worker-secrets-file.mjs apps/api.karasu256.com "$RUNNER_TEMP/api-secrets.json" DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
-          pnpm --filter api.karasu256.com exec wrangler secret bulk "$RUNNER_TEMP/api-secrets.json"
+          mode: production
+          hub-repo: Karasu-Lab/Karasu-Lab
+          app-path: apps/api.karasu256.com
+          secrets-command: node .github/scripts/worker-secrets-file.mjs {app_path} "{secrets_file}" {secret_names}
+          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
+          deploy-command: pnpm --filter api.karasu256.com deploy
+          preview-command: pnpm --filter api.karasu256.com preview -- --name "{branch}" --var "GIT_BRANCH:{branch}" --secrets-file "{secrets_file}"
+          sync-command: pnpm --filter api.karasu256.com exec wrangler secret bulk "{secrets_file}"
+          worker-name: api-karasu256-com
 
   preview:
     if: github.ref_name != 'main'
@@ -70,32 +37,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
+      VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
     steps:
-      - name: Assemble the workspace from the hub repository
-        run: |
-          git clone --recurse-submodules --branch dev https://github.com/Karasu-Lab/Karasu-Lab.git .
-          git -C apps/api.karasu256.com fetch origin "${{ github.sha }}"
-          git -C apps/api.karasu256.com checkout --detach "${{ github.sha }}"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Deploy the worker
+        uses: Karasu-Lab/Workers/deploy-worker@v1
         with:
-          node-version: 24
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Create or update the branch preview
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
-          VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
-        run: |
-          node .github/scripts/worker-secrets-file.mjs apps/api.karasu256.com "$RUNNER_TEMP/api-preview-secrets.json" DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
-          pnpm --filter api.karasu256.com preview -- --name "${{ github.ref_name }}" --var "GIT_BRANCH:${{ github.ref_name }}" --secrets-file "$RUNNER_TEMP/api-preview-secrets.json"
+          mode: preview
+          hub-repo: Karasu-Lab/Karasu-Lab
+          app-path: apps/api.karasu256.com
+          secrets-command: node .github/scripts/worker-secrets-file.mjs {app_path} "{secrets_file}" {secret_names}
+          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
+          deploy-command: pnpm --filter api.karasu256.com deploy
+          preview-command: pnpm --filter api.karasu256.com preview -- --name "{branch}" --var "GIT_BRANCH:{branch}" --secrets-file "{secrets_file}"
+          sync-command: pnpm --filter api.karasu256.com exec wrangler secret bulk "{secrets_file}"
+          worker-name: api-karasu256-com

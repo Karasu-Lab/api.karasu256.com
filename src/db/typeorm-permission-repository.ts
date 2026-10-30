@@ -1,5 +1,5 @@
 import { In, IsNull, type DataSource } from 'typeorm';
-import type { GrantedPermissionRecord, PermissionRecord, PermissionRepository } from '@Hashibutogarasu/api-permissions';
+import type { GrantedPermissionRecord, PermissionRecord, PermissionRepository } from '@karasu-lab/api-permissions';
 import { ApiKeyPermission } from './entities/api-key-permission';
 import { Permission } from './entities/permission';
 

@@ -1,6 +1,6 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { PermissionService, type Permission, type RouteAuthContext } from '@Hashibutogarasu/api-permissions';
-import { vercelProtectionBypassHeaders } from '@Hashibutogarasu/utils/server/vercel-bypass';
+import { PermissionService, type Permission, type RouteAuthContext } from '@karasu-lab/api-permissions';
+import { vercelProtectionBypassHeaders } from '@karasu-lab/utils/server/vercel-bypass';
 import { withDataSource } from '../db/data-source';
 import { TypeOrmPermissionRepository } from '../db/typeorm-permission-repository';
 

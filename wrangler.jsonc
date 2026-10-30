@@ -11,7 +11,7 @@
     },
   },
   "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
-  "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn" }],
+  "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-cdn" }],
   "vars": {
     "AUTH_URL": "https://api-auth.karasu256.com",
     "CDN_BASE_URL": "https://cdn.karasu256.com",
@@ -19,7 +19,7 @@
   },
   "preview_urls": true,
   "previews": {
-    "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
+    "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
     "vars": {
       "AUTH_URL": "https://dev-api-auth.karasu256.com",
       "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
@@ -29,7 +29,7 @@
   "env": {
     "local": {
       "routes": [],
-      "r2_buckets": [{ "binding": "IMAGES", "bucket_name": "karasu-lab-api-local" }],
+      "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-api-local" }],
       "vars": {
         "AUTH_URL": "http://localhost:8790",
         "CDN_BASE_URL": "http://localhost:8788",

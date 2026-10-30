@@ -65,7 +65,7 @@ export const profileRoutes = (env: Env) =>
         }
 
         const key = avatarKey(auth!.userId);
-        await env.IMAGES.put(key, await body.file.arrayBuffer(), { httpMetadata: { contentType: body.file.type } });
+        await env.CLOUDFLARE_IMAGES.put(key, await body.file.arrayBuffer(), { httpMetadata: { contentType: body.file.type } });
 
         const image = `${env.CDN_BASE_URL}/${key}`;
         const updated = await withDataSource(env, (dataSource) =>
@@ -82,7 +82,7 @@ export const profileRoutes = (env: Env) =>
     .get(
       '/profile/image',
       async ({ auth, set }) => {
-        const object = await env.IMAGES.get(avatarKey(auth!.userId));
+        const object = await env.CLOUDFLARE_IMAGES.get(avatarKey(auth!.userId));
         if (!object) {
           set.status = 404;
           return { error: 'not_found' };

@@ -13,16 +13,14 @@
   "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
   "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-cdn" }],
   "vars": {
-    "AUTH_URL": "https://api-auth.karasu256.com",
-    "CDN_BASE_URL": "https://cdn.karasu256.com",
+    "APP_ENV": "production",
     "GIT_BRANCH": "main",
   },
   "preview_urls": true,
   "previews": {
     "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
     "vars": {
-      "AUTH_URL": "https://dev-api-auth.karasu256.com",
-      "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
+      "APP_ENV": "preview",
       "GIT_BRANCH": "preview",
     },
   },
@@ -31,8 +29,7 @@
       "routes": [],
       "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-api-local" }],
       "vars": {
-        "AUTH_URL": "http://localhost:8790",
-        "CDN_BASE_URL": "http://localhost:8788",
+        "APP_ENV": "local",
         "GIT_BRANCH": "local",
         "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/karasu256",
         "INTERNAL_API_SECRET": "local-development-internal-api-secret",

@@ -3,8 +3,7 @@
 // Runtime types generated with workerd@1.20261001.1 2026-10-01 nodejs_compat
 interface __BaseEnv_Env {
   CLOUDFLARE_IMAGES: R2Bucket;
-  AUTH_URL: 'https://auth.karasu256.com';
-  CDN_BASE_URL: 'https://cdn.karasu256.com';
+  APP_ENV: 'production';
   GIT_BRANCH: 'main';
 }
 declare namespace Cloudflare {
@@ -18,7 +17,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
   [Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-  interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, 'AUTH_URL' | 'CDN_BASE_URL' | 'GIT_BRANCH'>> {}
+  interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, 'APP_ENV' | 'GIT_BRANCH'>> {}
 }
 
 // Begin runtime types

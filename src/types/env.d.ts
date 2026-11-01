@@ -13,5 +13,9 @@ declare global {
     INTERNAL_API_SECRET: string;
     /** Only set where the auth deployment this worker calls has Vercel Deployment Protection enabled. */
     VERCEL_PROTECTION_BYPASS_SECRET?: string;
+    /** Firebase service account for the proxied Firebase access; this worker is the only holder. */
+    FIREBASE_ADMIN_PROJECT_ID: string;
+    FIREBASE_ADMIN_CLIENT_EMAIL: string;
+    FIREBASE_ADMIN_PRIVATE_KEY: string;
   }
 }

@@ -5,55 +5,52 @@ on:
     branches: ["**"]
   workflow_dispatch:
 
+# Deployment itself lives in Karasu-Lab/WorkersDeploy: it deploys this
+# app standalone from this repository, detects the ElysiaJS project,
+# builds it with Vite, and deploys it to Cloudflare Workers.
+
 jobs:
   deploy:
     if: github.ref_name == 'main'
     environment: production
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      packages: read
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
       VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
+      NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Deploy the worker
-        uses: Karasu-Lab/Workers/deploy-worker@v1
+        uses: Karasu-Lab/WorkersDeploy@v1
         with:
           mode: production
-          hub-repo: Karasu-Lab/Karasu-Lab
-          app-path: apps/api.karasu256.com
-          secrets-command: node .github/scripts/worker-secrets-file.mjs {app_path} "{secrets_file}" {secret_names}
-          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
-          deploy-command: pnpm --filter api.karasu256.com deploy
-          preview-command: pnpm --filter api.karasu256.com preview -- --name "{branch}" --var "GIT_BRANCH:{branch}" --secrets-file "{secrets_file}"
-          sync-command: pnpm --filter api.karasu256.com exec wrangler secret bulk "{secrets_file}"
           worker-name: api-karasu256-com
+          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
 
   preview:
     if: github.ref_name != 'main'
     environment: preview
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      packages: read
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
       VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
+      NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN || secrets.GITHUB_TOKEN }}
     steps:
       - name: Deploy the worker
-        uses: Karasu-Lab/Workers/deploy-worker@v1
+        uses: Karasu-Lab/WorkersDeploy@v1
         with:
           mode: preview
-          hub-repo: Karasu-Lab/Karasu-Lab
-          app-path: apps/api.karasu256.com
-          secrets-command: node .github/scripts/worker-secrets-file.mjs {app_path} "{secrets_file}" {secret_names}
-          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
-          deploy-command: pnpm --filter api.karasu256.com deploy
-          preview-command: pnpm --filter api.karasu256.com preview -- --name "{branch}" --var "GIT_BRANCH:{branch}" --secrets-file "{secrets_file}"
-          sync-command: pnpm --filter api.karasu256.com exec wrangler secret bulk "{secrets_file}"
           worker-name: api-karasu256-com
+          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET
+          preview-args: --var GIT_BRANCH:{branch}

@@ -51,7 +51,7 @@ async function verifyOauthToken(token: string, env: Env): Promise<RouteAuthConte
 }
 
 /** better-auth's jwt plugin signs session JWTs (`set-auth-jwt` on `get-session`) with the same keys, but issued for the bare origin. */
-async function verifySessionJwt(token: string, env: Env): Promise<RouteAuthContext | null> {
+export async function verifySessionJwt(token: string, env: Env): Promise<RouteAuthContext | null> {
   try {
     const { payload } = await jwtVerify(token, getJwks(oauthIssuer(env)), { issuer: env.AUTH_URL, audience: env.AUTH_URL });
     if (!payload.sub) return null;
@@ -69,7 +69,13 @@ export async function authenticate(request: Request, env: Env): Promise<RouteAut
   return (await verifyOauthToken(token, env)) ?? (await verifySessionJwt(token, env)) ?? (await authenticateApiKey(token, env));
 }
 
-/** Service-to-service calls from accounts carry a shared secret instead of a user credential. */
+/**
+ * Service-to-service calls to the API-key permission endpoints (from
+ * api-auth, which has no user session of the key owner to present)
+ * carry a shared secret instead of a user credential. The internal
+ * user endpoints do not use this: they require the calling app's own
+ * token plus the user's session token (see routes/internal).
+ */
 export function isInternalCaller(request: Request, env: Env): boolean {
   return request.headers.get('authorization') === `Bearer ${env.INTERNAL_API_SECRET}`;
 }

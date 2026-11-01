@@ -1,20 +1,24 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { withDataSource } from '../db/data-source';
 import { Account } from '../db/entities/account';
 import { FirebaseUser } from '../db/entities/firebase-user';
-import { isInternalCaller } from '../lib/auth';
+import { verifyAppSignature } from '../lib/app-auth';
+import { getAdminAuth } from '../lib/firebase-admin';
 
 /**
  * Service-to-service reads and writes over the user data this API owns,
  * for callers that have already established the user's session
- * themselves (accounts.karasu256.com). Guarded by the shared internal
- * secret instead of a user credential; the caller names the user in
- * the path and is trusted to have authenticated them.
+ * themselves (accounts.karasu256.com). Guarded by application
+ * signatures (see lib/app-auth): the caller proves it is the genuine
+ * app with its app ID and private key, names the user in the path, and
+ * is trusted to have authenticated them. Firebase access is proxied
+ * here too, so the caller never talks to Firebase itself.
  */
 export const internalRoutes = (env: Env) =>
   new Elysia({ prefix: '/internal' })
-    .onBeforeHandle(({ request, set }) => {
-      if (!isInternalCaller(request, env)) {
+    .onBeforeHandle(async ({ request, set }) => {
+      const bodyText = request.method === 'GET' || request.method === 'DELETE' ? '' : await request.clone().text().catch(() => '');
+      if (!(await verifyAppSignature(request, env, bodyText))) {
         set.status = 401;
         return { error: 'Unauthorized' };
       }
@@ -41,4 +45,18 @@ export const internalRoutes = (env: Env) =>
         dataSource.getRepository(FirebaseUser).findOne({ where: { userId: params.userId }, select: { firebaseUid: true } })
       );
       return { firebaseUid: link?.firebaseUid ?? null };
-    });
+    })
+    .post(
+      '/users/:userId/firebase-photo',
+      async ({ params, body }) => {
+        const link = await withDataSource(env, (dataSource) =>
+          dataSource.getRepository(FirebaseUser).findOne({ where: { userId: params.userId }, select: { firebaseUid: true } })
+        );
+        if (!link?.firebaseUid) return { linked: false, previousPhotoURL: null };
+        const auth = getAdminAuth(env);
+        const previous = await auth.getUser(link.firebaseUid);
+        await auth.updateUser(link.firebaseUid, { photoURL: body.photoURL });
+        return { linked: true, previousPhotoURL: previous.photoURL ?? null };
+      },
+      { body: t.Object({ photoURL: t.Union([t.String(), t.Null()]) }) }
+    );

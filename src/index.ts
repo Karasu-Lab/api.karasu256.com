@@ -4,6 +4,7 @@ import { env as cfEnv } from 'cloudflare:workers';
 import { resolveEnv } from './constants';
 import { apiKeyRoutes } from './routes/api-keys';
 import { assetLinkRoutes } from './routes/asset-links';
+import { internalRoutes } from './routes/internal';
 import { metaRoutes } from './routes/meta';
 import { permissionRoutes } from './routes/permissions';
 import { userRoutes } from './routes/user';
@@ -13,6 +14,7 @@ const env = resolveEnv(cfEnv as Env);
 /** Workers do not allow generating code at runtime. */
 const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typebox' })
   .use(userRoutes(env))
+  .use(internalRoutes(env))
   .use(permissionRoutes(env))
   .use(apiKeyRoutes(env))
   .use(metaRoutes(env))

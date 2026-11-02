@@ -20,8 +20,8 @@
     "yaml": "^2.9.0"
   },
   "dependencies": {
-    "@karasu-lab/api-permissions": "0.1.0-4efb331",
-    "@karasu-lab/utils": "0.1.0-967de79",
+    "@karasu-lab/api-permissions": "0.1.0-4b04f47",
+    "@karasu-lab/utils": "0.1.0-be51f04",
     "elysia": "^1.4.29",
     "firebase-admin": "^14.0.0",
     "jose": "^6.2.5",

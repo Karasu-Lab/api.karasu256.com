@@ -6,6 +6,7 @@ import { apiKeyRoutes } from './routes/api-keys';
 import { assetLinkRoutes } from './routes/asset-links';
 import { internalRoutes } from './routes/internal';
 import { metaRoutes } from './routes/meta';
+import { githubProxyRoutes } from './routes/github-proxy';
 import { mojangProxyRoutes } from './routes/mojang-proxy';
 import { permissionRoutes } from './routes/permissions';
 import { userRoutes } from './routes/user';
@@ -20,7 +21,8 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(apiKeyRoutes(env))
   .use(metaRoutes(env))
   .use(assetLinkRoutes())
-  .use(mojangProxyRoutes());
+  .use(mojangProxyRoutes())
+  .use(githubProxyRoutes());
 
 /** Collapses repeated slashes so a caller's base URL with a trailing slash still reaches the route. */
 function normalizePath(request: Request): Request {

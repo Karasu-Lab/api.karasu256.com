@@ -5,7 +5,7 @@ import { FirebaseUser } from '../db/entities/firebase-user';
 import { User } from '../db/entities/user';
 import { internalUserId, verifyAppToken } from '../lib/app-auth';
 import { verifySessionJwt } from '../lib/auth';
-import { getAdminAuth } from '../lib/firebase-admin';
+import { getFirebasePhotoURL, setFirebasePhotoURL } from '../lib/firebase';
 
 const rawBodies = new WeakMap<Request, string>();
 
@@ -67,10 +67,9 @@ export const internalRoutes = (env: Env) =>
           dataSource.getRepository(FirebaseUser).findOne({ where: { userId: params.userId }, select: { firebaseUid: true } })
         );
         if (!link?.firebaseUid) return { linked: false, previousPhotoURL: null };
-        const auth = getAdminAuth(env);
-        const previous = await auth.getUser(link.firebaseUid);
-        await auth.updateUser(link.firebaseUid, { photoURL: body.photoURL });
-        return { linked: true, previousPhotoURL: previous.photoURL ?? null };
+        const previousPhotoURL = await getFirebasePhotoURL(env, link.firebaseUid);
+        await setFirebasePhotoURL(env, link.firebaseUid, body.photoURL);
+        return { linked: true, previousPhotoURL };
       },
       { body: t.Object({ photoURL: t.Union([t.String(), t.Null()]) }) }
     );

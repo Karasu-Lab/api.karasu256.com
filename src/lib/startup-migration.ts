@@ -3,7 +3,7 @@ import { withDataSource } from '../db/data-source';
 import { FirebaseUser } from '../db/entities/firebase-user';
 import { User } from '../db/entities/user';
 import { cdnUrl, getCdnFile, inspectObject, upsertCdnFile } from './cdn-files';
-import { getAdminAuth } from './firebase-admin';
+import { getFirebasePhotoURL, setFirebasePhotoURL } from './firebase';
 
 const MIGRATION_NAME = 'avatars-v1';
 const BATCH_SIZE = 50;
@@ -71,10 +71,8 @@ async function migrateAvatar(env: Env, dataSource: DataSource, key: string): Pro
     .getRepository(FirebaseUser)
     .findOne({ where: { userId }, select: { firebaseUid: true } });
   if (!link?.firebaseUid) return;
-  const auth = getAdminAuth(env);
-  const firebaseUser = await auth.getUser(link.firebaseUid);
-  if (pointsTo(firebaseUser.photoURL, legacyUrl)) {
-    await auth.updateUser(link.firebaseUid, { photoURL: nextUrl });
+  if (pointsTo(await getFirebasePhotoURL(env, link.firebaseUid), legacyUrl)) {
+    await setFirebasePhotoURL(env, link.firebaseUid, nextUrl);
   }
 }
 

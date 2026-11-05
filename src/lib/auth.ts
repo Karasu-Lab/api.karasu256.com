@@ -52,13 +52,9 @@ async function verifyOauthToken(token: string, env: Env): Promise<RouteAuthConte
 
 /** better-auth's jwt plugin signs session JWTs (`set-auth-jwt` on `get-session`) with the same keys, but issued for the bare origin. */
 export async function verifySessionJwt(token: string, env: Env): Promise<RouteAuthContext | null> {
-  try {
-    const { payload } = await jwtVerify(token, getJwks(oauthIssuer(env)), { issuer: env.AUTH_URL, audience: env.AUTH_URL });
-    if (!payload.sub) return null;
-    return { userId: payload.sub, authMethod: 'session', permissions: null, scopes: null };
-  } catch {
-    return null;
-  }
+  const { payload } = await jwtVerify(token, getJwks(oauthIssuer(env)), { issuer: env.AUTH_URL, audience: env.AUTH_URL });
+  if (!payload.sub) return null;
+  return { userId: payload.sub, authMethod: 'session', permissions: null, scopes: null };
 }
 
 export async function authenticate(request: Request, env: Env): Promise<RouteAuthContext | null> {
@@ -66,7 +62,8 @@ export async function authenticate(request: Request, env: Env): Promise<RouteAut
   if (!header?.startsWith('Bearer ')) return null;
   const token = header.slice(7);
   if (!token) return null;
-  return (await verifyOauthToken(token, env)) ?? (await verifySessionJwt(token, env)) ?? (await authenticateApiKey(token, env));
+  const session = () => verifySessionJwt(token, env).catch(() => null);
+  return (await verifyOauthToken(token, env)) ?? (await session()) ?? (await authenticateApiKey(token, env));
 }
 
 /**

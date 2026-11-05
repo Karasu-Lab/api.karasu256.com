@@ -2,6 +2,7 @@ import { Elysia } from 'elysia';
 import { CloudflareAdapter } from 'elysia/adapter/cloudflare-worker';
 import { env as cfEnv } from 'cloudflare:workers';
 import { resolveEnv } from './constants';
+import { errorHandler } from './lib/error-handler';
 import { runStartupMigrations } from './lib/startup-migration';
 import { apiKeyRoutes } from './routes/api-keys';
 import { assetLinkRoutes } from './routes/asset-links';
@@ -17,6 +18,7 @@ const env = resolveEnv(cfEnv as Env);
 
 /** Workers do not allow generating code at runtime. */
 const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typebox' })
+  .use(errorHandler())
   .use(userRoutes(env))
   .use(internalRoutes(env))
   .use(permissionRoutes(env))

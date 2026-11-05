@@ -7,13 +7,20 @@ import { internalUserId, verifyAppToken } from '../lib/app-auth';
 import { verifySessionJwt } from '../lib/auth';
 import { getAdminAuth } from '../lib/firebase-admin';
 
+const rawBodies = new WeakMap<Request, string>();
+
 export const internalRoutes = (env: Env) =>
   new Elysia({ prefix: '/internal' })
+    .onParse(async ({ request }) => {
+      const text = await request.text();
+      rawBodies.set(request, text);
+      return text ? JSON.parse(text) : {};
+    })
     .onBeforeHandle(async ({ request, set }) => {
       const userId = internalUserId(new URL(request.url).pathname);
       const header = request.headers.get('authorization');
       const session = header?.startsWith('Bearer ') ? await verifySessionJwt(header.slice(7), env) : null;
-      const bodyText = request.method === 'GET' || request.method === 'DELETE' ? '' : await request.clone().text().catch(() => '');
+      const bodyText = rawBodies.get(request) ?? '';
       if (!userId || session?.userId !== userId || !(await verifyAppToken(request, env, bodyText))) {
         set.status = 401;
         return { error: 'Unauthorized' };

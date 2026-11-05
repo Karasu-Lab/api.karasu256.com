@@ -30,6 +30,9 @@ jobs:
       FIREBASE_ADMIN_CLIENT_EMAIL: ${{ vars.FIREBASE_ADMIN_CLIENT_EMAIL }}
       FIREBASE_ADMIN_PRIVATE_KEY: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
     steps:
+      - uses: actions/checkout@v4
+      - name: Apply D1 migrations
+        run: npx --yes wrangler@4 d1 migrations apply CDN_DB --remote
       - name: Deploy the worker
         uses: Karasu-Lab/WorkersDeploy@v1
         with:

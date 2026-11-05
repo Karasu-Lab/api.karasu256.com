@@ -12,6 +12,14 @@
   },
   "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
   "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-cdn" }],
+  "d1_databases": [
+    {
+      "binding": "CDN_DB",
+      "database_name": "<PRODUCTION_D1_DATABASE_NAME>",
+      "database_id": "<PRODUCTION_D1_DATABASE_ID>",
+      "migrations_dir": "migrations",
+    },
+  ],
   "vars": {
     "APP_ENV": "production",
     "GIT_BRANCH": "main",
@@ -19,6 +27,14 @@
   "preview_urls": true,
   "previews": {
     "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-cdn-dev" }],
+    "d1_databases": [
+      {
+        "binding": "CDN_DB",
+        "database_name": "<PREVIEW_D1_DATABASE_NAME>",
+        "database_id": "<PREVIEW_D1_DATABASE_ID>",
+        "migrations_dir": "migrations",
+      },
+    ],
     "vars": {
       "APP_ENV": "preview",
       "GIT_BRANCH": "preview",
@@ -28,6 +44,14 @@
     "local": {
       "routes": [],
       "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-api-local" }],
+      "d1_databases": [
+        {
+          "binding": "CDN_DB",
+          "database_name": "<LOCAL_D1_DATABASE_NAME>",
+          "database_id": "<LOCAL_D1_DATABASE_ID>",
+          "migrations_dir": "migrations",
+        },
+      ],
       "vars": {
         "APP_ENV": "local",
         "GIT_BRANCH": "local",

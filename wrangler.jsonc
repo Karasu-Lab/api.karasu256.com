@@ -48,7 +48,7 @@
         {
           "binding": "CDN_DB",
           "database_name": "karasu-lab-api-local",
-          "database_id": "7db38bd4-078f-4b5e-a8a4-c2cea3d2e483",
+          "database_id": "cdn-db-local",
           "migrations_dir": "migrations",
         },
       ],

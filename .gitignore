@@ -11,6 +11,7 @@ node_modules
 dist
 .wrangler
 .direnv
+.turbo
 test-results
 playwright-report
 dist-ssr

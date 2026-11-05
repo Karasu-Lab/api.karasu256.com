@@ -43,12 +43,12 @@
   "env": {
     "local": {
       "routes": [],
-      "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "karasu-lab-api-local" }],
+      "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "api-local" }],
       "d1_databases": [
         {
           "binding": "CDN_DB",
-          "database_name": "karasu-lab-api-local",
-          "database_id": "cdn-db-local",
+          "database_name": "api-local",
+          "database_id": "api-local",
           "migrations_dir": "migrations",
         },
       ],

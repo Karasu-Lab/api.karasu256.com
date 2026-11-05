@@ -1,25 +1,12 @@
-import { Elysia, t } from 'elysia';
+import { Elysia, NotFoundError, t } from 'elysia';
 import { withDataSource } from '../db/data-source';
 import { Account } from '../db/entities/account';
 import { FirebaseUser } from '../db/entities/firebase-user';
+import { User } from '../db/entities/user';
 import { internalUserId, verifyAppToken } from '../lib/app-auth';
 import { verifySessionJwt } from '../lib/auth';
 import { getAdminAuth } from '../lib/firebase-admin';
 
-/**
- * Service-to-service reads and writes over the user data this API owns
- * (accounts.karasu256.com). Every call must present two proofs, and
- * both must name the user in the path:
- *
- * - the calling app's own short-lived token, signed with the app
- *   private key registered here by app ID (see lib/app-auth), and
- * - the user's better-auth session token, verified against the auth
- *   server's JWKS like any other session call to this API.
- *
- * Firebase access is proxied here too, executed with the Firebase
- * Admin credentials only this worker holds, so the caller never talks
- * to Firebase itself and holds no Firebase credentials of its own.
- */
 export const internalRoutes = (env: Env) =>
   new Elysia({ prefix: '/internal' })
     .onBeforeHandle(async ({ request, set }) => {
@@ -55,6 +42,17 @@ export const internalRoutes = (env: Env) =>
       );
       return { firebaseUid: link?.firebaseUid ?? null };
     })
+    .post(
+      '/users/:userId/image',
+      async ({ params, body }) => {
+        const result = await withDataSource(env, (dataSource) =>
+          dataSource.getRepository(User).update({ id: params.userId }, { image: body.image, updatedAt: new Date() })
+        );
+        if (!result.affected) throw new NotFoundError();
+        return { image: body.image };
+      },
+      { body: t.Object({ image: t.Union([t.String({ maxLength: 2048 }), t.Null()]) }) }
+    )
     .post(
       '/users/:userId/firebase-photo',
       async ({ params, body }) => {

@@ -23,6 +23,8 @@
   "vars": {
     "APP_ENV": "production",
     "GIT_BRANCH": "main",
+    "AUTH_URL": "https://api-auth.karasu256.com",
+    "CDN_BASE_URL": "https://cdn.karasu256.com",
   },
   "preview_urls": true,
   "previews": {
@@ -38,6 +40,8 @@
     "vars": {
       "APP_ENV": "preview",
       "GIT_BRANCH": "preview",
+      "AUTH_URL": "https://dev-api-auth.karasu256.com",
+      "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
     },
   },
   "env": {
@@ -54,6 +58,8 @@
       "vars": {
         "APP_ENV": "local",
         "GIT_BRANCH": "local",
+        "AUTH_URL": "http://localhost:8790",
+        "CDN_BASE_URL": "http://localhost:8788",
         "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/karasu256",
         "INTERNAL_API_SECRET": "local-development-internal-api-secret",
       },

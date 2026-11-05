@@ -15,8 +15,8 @@
   "d1_databases": [
     {
       "binding": "CDN_DB",
-      "database_name": "<PRODUCTION_D1_DATABASE_NAME>",
-      "database_id": "<PRODUCTION_D1_DATABASE_ID>",
+      "database_name": "karasu-lab-cdn",
+      "database_id": "2136e93b-b957-4285-b6af-022e02ac0d62",
       "migrations_dir": "migrations",
     },
   ],
@@ -30,8 +30,8 @@
     "d1_databases": [
       {
         "binding": "CDN_DB",
-        "database_name": "<PREVIEW_D1_DATABASE_NAME>",
-        "database_id": "<PREVIEW_D1_DATABASE_ID>",
+        "database_name": "karasu-lab-cdn-dev",
+        "database_id": "6aecf371-19ed-4754-81d5-8a2c1de151fa",
         "migrations_dir": "migrations",
       },
     ],
@@ -47,8 +47,8 @@
       "d1_databases": [
         {
           "binding": "CDN_DB",
-          "database_name": "<LOCAL_D1_DATABASE_NAME>",
-          "database_id": "<LOCAL_D1_DATABASE_ID>",
+          "database_name": "karasu-lab-api-local",
+          "database_id": "7db38bd4-078f-4b5e-a8a4-c2cea3d2e483",
           "migrations_dir": "migrations",
         },
       ],

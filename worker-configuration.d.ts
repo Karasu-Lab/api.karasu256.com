@@ -3,6 +3,7 @@
 // Runtime types generated with workerd@1.20261001.1 2026-10-01 nodejs_compat
 interface __BaseEnv_Env {
   CLOUDFLARE_IMAGES: R2Bucket;
+  CDN_DB: D1Database;
   APP_ENV: 'production';
   GIT_BRANCH: 'main';
 }

@@ -3,6 +3,7 @@ export {};
 declare global {
   interface Env {
     APP_ENV: 'local' | 'preview' | 'production';
+    CDN_DB: D1Database;
     /** Resolved by src/constants.ts: carries a zod default branched on APP_ENV, so wrangler vars no longer define it. */
     AUTH_URL: string;
     /** Resolved by src/constants.ts: carries a zod default branched on APP_ENV, so wrangler vars no longer define it. */

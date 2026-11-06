@@ -100,11 +100,7 @@ describe('internal user endpoint authentication', () => {
     vi.useRealTimers();
   });
 
-  const env = {
-    AUTH_URL,
-    ACCOUNTS_APP_ID: 'accounts.karasu256.com',
-    ACCOUNTS_APP_PUBLIC_KEY: issuerState.mcpPublicKey as string,
-  } as unknown as Env;
+  const env = { AUTH_URL } as unknown as Env;
 
   it('verifies the session JWT minted by the MCP session token exchange', async () => {
     const session = await verifySessionJwt(sessionJwtFromExchange, env);
@@ -145,7 +141,7 @@ describe('internal user endpoint authentication', () => {
       headers: { 'x-app-token': mcpAppToken(body), authorization: `Bearer ${sessionJwtFromExchange}` },
       body,
     });
-    await expect(verifyAppToken(request, env, body)).resolves.toBe(true);
+    await expect(verifyAppToken(request, body)).resolves.toBe(true);
   });
 
   it('rejects the app token once the app registration is gone', async () => {
@@ -156,12 +152,12 @@ describe('internal user endpoint authentication', () => {
         headers: { 'x-app-token': mcpAppToken(body) },
         body,
       });
-    await expect(verifyAppToken(buildRequest(), env, body)).resolves.toBe(true);
+    await expect(verifyAppToken(buildRequest(), body)).resolves.toBe(true);
 
     issuerState.mcpRegistered = false;
     vi.useFakeTimers();
     vi.advanceTimersByTime(10 * 60 * 1000);
 
-    await expect(verifyAppToken(buildRequest(), env, body)).resolves.toBe(false);
+    await expect(verifyAppToken(buildRequest(), body)).resolves.toBe(false);
   });
 });

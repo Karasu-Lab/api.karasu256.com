@@ -1,4 +1,5 @@
 import { decodeJwt, importSPKI, jwtVerify, type JWTPayload } from 'jose';
+import { z } from 'zod';
 
 interface AppTokenPayload extends JWTPayload {
   method?: string;
@@ -34,20 +35,39 @@ function consumeTokenId(jti: string, exp: number): boolean {
   return true;
 }
 
-interface RegisteredApp {
-  id: string;
+const APP_RESOLUTION_TTL_MS = 60_000;
+
+const appIdSchema = z.string().regex(/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i);
+
+const appRegistrationSchema = z.object({
+  appId: z.string(),
+  publicKey: z.string().min(1),
+});
+
+interface ResolvedApp {
   publicKey: string;
+  expiresAt: number;
 }
 
-function registeredApps(env: Env): RegisteredApp[] {
-  const apps: RegisteredApp[] = [{ id: env.ACCOUNTS_APP_ID, publicKey: env.ACCOUNTS_APP_PUBLIC_KEY }];
-  if (env.MCP_APP_ID && env.MCP_APP_PUBLIC_KEY) {
-    apps.push({ id: env.MCP_APP_ID, publicKey: env.MCP_APP_PUBLIC_KEY });
+const resolvedApps = new Map<string, ResolvedApp>();
+
+async function resolveAppPublicKey(issuer: string): Promise<string | null> {
+  const cached = resolvedApps.get(issuer);
+  if (cached && cached.expiresAt > Date.now()) return cached.publicKey;
+  if (!appIdSchema.safeParse(issuer).success || issuer.includes('..')) return null;
+  try {
+    const res = await fetch(`https://${issuer}/.well-known/app-public-key`, { headers: { accept: 'application/json' } });
+    if (!res.ok) return null;
+    const parsed = appRegistrationSchema.safeParse(await res.json());
+    if (!parsed.success || parsed.data.appId !== issuer) return null;
+    resolvedApps.set(issuer, { publicKey: parsed.data.publicKey, expiresAt: Date.now() + APP_RESOLUTION_TTL_MS });
+    return parsed.data.publicKey;
+  } catch {
+    return null;
   }
-  return apps;
 }
 
-export async function verifyAppToken(request: Request, env: Env, bodyText: string): Promise<boolean> {
+export async function verifyAppToken(request: Request, bodyText: string): Promise<boolean> {
   const token = request.headers.get('x-app-token');
   if (!token) return false;
 
@@ -57,8 +77,9 @@ export async function verifyAppToken(request: Request, env: Env, bodyText: strin
   } catch {
     return false;
   }
-  const app = registeredApps(env).find((candidate) => candidate.id === issuer);
-  if (!app) return false;
+  if (!issuer) return false;
+  const publicKey = await resolveAppPublicKey(issuer);
+  if (!publicKey) return false;
 
   const url = new URL(request.url);
   const userId = internalUserId(url.pathname);
@@ -66,10 +87,10 @@ export async function verifyAppToken(request: Request, env: Env, bodyText: strin
 
   let payload: AppTokenPayload;
   try {
-    const key = await importSPKI(spkiFromBase64(app.publicKey), 'EdDSA');
+    const key = await importSPKI(spkiFromBase64(publicKey), 'EdDSA');
     const verified = await jwtVerify(token, key, {
       algorithms: ['EdDSA'],
-      issuer: app.id,
+      issuer,
       audience: url.origin,
     });
     payload = verified.payload as AppTokenPayload;

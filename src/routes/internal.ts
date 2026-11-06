@@ -6,6 +6,7 @@ import { FirebaseUser } from '../db/entities/firebase-user';
 import { User } from '../db/entities/user';
 import { internalUserId, verifyAppToken } from '../lib/app-auth';
 import { verifySessionJwt } from '../lib/auth';
+import { listActiveSessions, revokeActiveSession } from '../lib/sessions';
 import { getFirebasePhotoURL, setFirebasePhotoURL } from '../lib/firebase';
 
 const rawBodies = new WeakMap<Request, string>();
@@ -42,6 +43,16 @@ export const internalRoutes = (env: Env) =>
         dataSource.getRepository(Account).delete({ userId: params.userId, providerId: params.providerId })
       );
       if (!result.affected) {
+        set.status = 404;
+        return { error: 'Not found' };
+      }
+      set.status = 204;
+      return null;
+    })
+    .get('/users/:userId/sessions', async ({ params }) => listActiveSessions(env, params.userId))
+    .delete('/users/:userId/sessions/:sessionId', async ({ params, set }) => {
+      const revoked = await revokeActiveSession(env, params.userId, params.sessionId);
+      if (!revoked) {
         set.status = 404;
         return { error: 'Not found' };
       }

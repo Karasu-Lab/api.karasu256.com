@@ -7,6 +7,7 @@
     "dev": "CLOUDFLARE_ENV=local vite dev --port 8789 --strictPort",
     "build": "tsc && vite build && wrangler deploy --dry-run",
     "types": "wrangler types --env-interface Env",
+    "test": "vitest run",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
@@ -14,8 +15,10 @@
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.6.4",
     "@types/pg": "^8.23.1",
+    "better-auth": "1.7.12",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
+    "vitest": "^5.1.0",
     "wrangler": "^4.147.0",
     "yaml": "^2.9.0"
   },

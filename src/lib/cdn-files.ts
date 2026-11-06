@@ -1,35 +1,10 @@
+import type { CdnFile, CdnFileRow, InspectedObject } from '@karasu-lab/types/server';
 import { ALLOWED_TYPES, MAX_FILE_BYTES } from './images';
+
+export type { CdnFile, CdnFileRow, InspectedObject };
 
 const MAX_PATH_LENGTH = 1024;
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
-
-export type CdnFile = {
-  path: string;
-  sha256: string;
-  contentType: string;
-  size: number;
-  uploaderId: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type CdnFileRow = {
-  path: string;
-  sha256: string;
-  content_type: string;
-  size: number;
-  uploader_id: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-export type InspectedObject = {
-  sha256: string;
-  size: number;
-  contentType: string;
-  body: ArrayBuffer;
-  httpMetadata: R2HTTPMetadata | undefined;
-};
 
 export function isSafePath(path: string): boolean {
   if (!path || path.length > MAX_PATH_LENGTH) return false;

@@ -1,4 +1,5 @@
-import { Elysia, NotFoundError, t } from 'elysia';
+import { Elysia, NotFoundError } from 'elysia';
+import { z } from 'zod';
 import { withDataSource } from '../db/data-source';
 import { Account } from '../db/entities/account';
 import { FirebaseUser } from '../db/entities/firebase-user';
@@ -8,6 +9,10 @@ import { verifySessionJwt } from '../lib/auth';
 import { getFirebasePhotoURL, setFirebasePhotoURL } from '../lib/firebase';
 
 const rawBodies = new WeakMap<Request, string>();
+
+const imageBodySchema = z.object({ image: z.string().max(2048).nullable() });
+
+const photoBodySchema = z.object({ photoURL: z.string().nullable() });
 
 export const internalRoutes = (env: Env) =>
   new Elysia({ prefix: '/internal' })
@@ -49,27 +54,23 @@ export const internalRoutes = (env: Env) =>
       );
       return { firebaseUid: link?.firebaseUid ?? null };
     })
-    .post(
-      '/users/:userId/image',
-      async ({ params, body }) => {
-        const result = await withDataSource(env, (dataSource) =>
-          dataSource.getRepository(User).update({ id: params.userId }, { image: body.image, updatedAt: new Date() })
-        );
-        if (!result.affected) throw new NotFoundError();
-        return { image: body.image };
-      },
-      { body: t.Object({ image: t.Union([t.String({ maxLength: 2048 }), t.Null()]) }) }
-    )
-    .post(
-      '/users/:userId/firebase-photo',
-      async ({ params, body }) => {
-        const link = await withDataSource(env, (dataSource) =>
-          dataSource.getRepository(FirebaseUser).findOne({ where: { userId: params.userId }, select: { firebaseUid: true } })
-        );
-        if (!link?.firebaseUid) return { linked: false, previousPhotoURL: null };
-        const previousPhotoURL = await getFirebasePhotoURL(env, link.firebaseUid);
-        await setFirebasePhotoURL(env, link.firebaseUid, body.photoURL);
-        return { linked: true, previousPhotoURL };
-      },
-      { body: t.Object({ photoURL: t.Union([t.String(), t.Null()]) }) }
-    );
+    .post('/users/:userId/image', async ({ params, body }) => {
+      const parsed = imageBodySchema.safeParse(body);
+      if (!parsed.success) throw parsed.error;
+      const result = await withDataSource(env, (dataSource) =>
+        dataSource.getRepository(User).update({ id: params.userId }, { image: parsed.data.image, updatedAt: new Date() })
+      );
+      if (!result.affected) throw new NotFoundError();
+      return { image: parsed.data.image };
+    })
+    .post('/users/:userId/firebase-photo', async ({ params, body }) => {
+      const parsed = photoBodySchema.safeParse(body);
+      if (!parsed.success) throw parsed.error;
+      const link = await withDataSource(env, (dataSource) =>
+        dataSource.getRepository(FirebaseUser).findOne({ where: { userId: params.userId }, select: { firebaseUid: true } })
+      );
+      if (!link?.firebaseUid) return { linked: false, previousPhotoURL: null };
+      const previousPhotoURL = await getFirebasePhotoURL(env, link.firebaseUid);
+      await setFirebasePhotoURL(env, link.firebaseUid, parsed.data.photoURL);
+      return { linked: true, previousPhotoURL };
+    });

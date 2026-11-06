@@ -1,12 +1,12 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { PermissionService, type Permission, type RouteAuthContext } from '@karasu-lab/api-permissions';
+import { oauthTokenClaimsSchema } from '@karasu-lab/types/server';
 import { vercelProtectionBypassHeaders } from '@karasu-lab/utils/server/vercel-bypass';
 import { withDataSource } from '../db/data-source';
 import { TypeOrmPermissionRepository } from '../db/typeorm-permission-repository';
 
 const jwksByIssuer = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
-/** better-auth's issuer, audience and JWKS live under its `/api/auth` mount path, not the bare origin. */
 function oauthIssuer(env: Env): string {
   return `${env.AUTH_URL}/api/auth`;
 }
@@ -19,7 +19,6 @@ function getJwks(issuer: string): ReturnType<typeof createRemoteJWKSet> {
   return jwks;
 }
 
-/** Key validity stays with better-auth in auth.karasu256.com; which permissions the key carries is resolved here. */
 export async function verifyApiKey(token: string, env: Env): Promise<{ userId: string; keyId: string; permissions: Permission[] } | null> {
   const res = await fetch(`${env.AUTH_URL}/api/api-keys/verify`, {
     method: 'POST',
@@ -42,19 +41,20 @@ async function verifyOauthToken(token: string, env: Env): Promise<RouteAuthConte
   const issuer = oauthIssuer(env);
   try {
     const { payload } = await jwtVerify(token, getJwks(issuer), { issuer, audience: issuer });
-    if (!payload.sub) return null;
-    const scopes = typeof payload.scope === 'string' ? payload.scope.split(' ') : [];
-    return { userId: payload.sub, authMethod: 'oauthApp', permissions: null, scopes };
+    const parsed = oauthTokenClaimsSchema.safeParse(payload);
+    if (!parsed.success) return null;
+    const scopes = parsed.data.scope !== undefined ? parsed.data.scope.split(' ') : [];
+    return { userId: parsed.data.sub, authMethod: 'oauthApp', permissions: null, scopes };
   } catch {
     return null;
   }
 }
 
-/** better-auth's jwt plugin signs session JWTs (`set-auth-jwt` on `get-session`) with the same keys, but issued for the bare origin. */
 export async function verifySessionJwt(token: string, env: Env): Promise<RouteAuthContext | null> {
   const { payload } = await jwtVerify(token, getJwks(oauthIssuer(env)), { issuer: env.AUTH_URL, audience: env.AUTH_URL });
-  if (!payload.sub) return null;
-  return { userId: payload.sub, authMethod: 'session', permissions: null, scopes: null };
+  const parsed = oauthTokenClaimsSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  return { userId: parsed.data.sub, authMethod: 'session', permissions: null, scopes: null };
 }
 
 export async function authenticate(request: Request, env: Env): Promise<RouteAuthContext | null> {
@@ -66,13 +66,6 @@ export async function authenticate(request: Request, env: Env): Promise<RouteAut
   return (await verifyOauthToken(token, env)) ?? (await session()) ?? (await authenticateApiKey(token, env));
 }
 
-/**
- * Service-to-service calls to the API-key permission endpoints (from
- * api-auth, which has no user session of the key owner to present)
- * carry a shared secret instead of a user credential. The internal
- * user endpoints do not use this: they require the calling app's own
- * token plus the user's session token (see routes/internal).
- */
 export function isInternalCaller(request: Request, env: Env): boolean {
   return request.headers.get('authorization') === `Bearer ${env.INTERNAL_API_SECRET}`;
 }

@@ -1,18 +1,18 @@
-import { Elysia, t } from 'elysia';
+import { Elysia } from 'elysia';
+import { z } from 'zod';
 import { permissionBitmask } from '@karasu-lab/api-permissions';
 import { verifyApiKey } from '../lib/auth';
 
-/** Lets other resource servers check a key without each resolving permissions on their own. */
+const verifyBodySchema = z.object({ key: z.string().min(1) });
+
 export const apiKeyRoutes = (env: Env) =>
-  new Elysia().post(
-    '/api-keys/verify',
-    async ({ body, set }) => {
-      const verified = await verifyApiKey(body.key, env);
-      if (!verified) {
-        set.status = 401;
-        return { error: 'Unauthorized' };
-      }
-      return { userId: verified.userId, keyId: verified.keyId, permissions: permissionBitmask.build(verified.permissions).toString() };
-    },
-    { body: t.Object({ key: t.String({ minLength: 1 }) }) }
-  );
+  new Elysia().post('/api-keys/verify', async ({ body, set }) => {
+    const parsed = verifyBodySchema.safeParse(body);
+    if (!parsed.success) throw parsed.error;
+    const verified = await verifyApiKey(parsed.data.key, env);
+    if (!verified) {
+      set.status = 401;
+      return { error: 'Unauthorized' };
+    }
+    return { userId: verified.userId, keyId: verified.keyId, permissions: permissionBitmask.build(verified.permissions).toString() };
+  });

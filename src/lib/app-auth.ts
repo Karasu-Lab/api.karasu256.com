@@ -1,11 +1,8 @@
 import { decodeJwt, importSPKI, jwtVerify, type JWTPayload } from 'jose';
+import { appAuthConfigSchema, appRegistrationSchema, appTokenPayloadSchema, type AppAuthConfig } from '@karasu-lab/types/server';
 import { z } from 'zod';
 
-interface AppTokenPayload extends JWTPayload {
-  method?: string;
-  path?: string;
-  bodySha256?: string;
-}
+export { appAuthConfigSchema, appRegistrationSchema, type AppAuthConfig };
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -35,19 +32,7 @@ function consumeTokenId(jti: string, exp: number): boolean {
   return true;
 }
 
-export const appAuthConfigSchema = z.object({
-  registrationPath: z.string().startsWith('/').default('/.well-known/app-public-key'),
-  resolutionTtlMs: z.number().int().positive().default(60_000),
-});
-
-export type AppAuthConfig = z.infer<typeof appAuthConfigSchema>;
-
 const appIdSchema = z.string().regex(/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i);
-
-const appRegistrationSchema = z.object({
-  appId: z.string(),
-  publicKey: z.string().min(1),
-});
 
 interface ResolvedApp {
   publicKey: string;
@@ -91,7 +76,7 @@ export async function verifyAppToken(request: Request, bodyText: string, configI
   const userId = internalUserId(url.pathname);
   if (!userId) return false;
 
-  let payload: AppTokenPayload;
+  let payload: JWTPayload;
   try {
     const key = await importSPKI(spkiFromBase64(publicKey), 'EdDSA');
     const verified = await jwtVerify(token, key, {
@@ -99,16 +84,19 @@ export async function verifyAppToken(request: Request, bodyText: string, configI
       issuer,
       audience: url.origin,
     });
-    payload = verified.payload as AppTokenPayload;
+    payload = verified.payload;
   } catch {
     return false;
   }
 
-  if (payload.sub !== userId) return false;
-  if (typeof payload.jti !== 'string' || !payload.jti) return false;
-  if (typeof payload.exp !== 'number' || !consumeTokenId(payload.jti, payload.exp)) return false;
-  if (payload.method !== request.method) return false;
-  if (payload.path !== url.pathname) return false;
-  if (payload.bodySha256 !== (await sha256Hex(bodyText))) return false;
+  const parsed = appTokenPayloadSchema.safeParse(payload);
+  if (!parsed.success) return false;
+  const claims = parsed.data;
+
+  if (claims.sub !== userId) return false;
+  if (!consumeTokenId(claims.jti, claims.exp)) return false;
+  if (claims.method !== request.method) return false;
+  if (claims.path !== url.pathname) return false;
+  if (claims.bodySha256 !== (await sha256Hex(bodyText))) return false;
   return true;
 }

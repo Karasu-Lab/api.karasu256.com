@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@karasu-lab/api-permissions": "0.1.0-4b04f47",
+    "@karasu-lab/types": "0.1.0-5448699",
     "@karasu-lab/utils": "0.1.0-be51f04",
     "elysia": "^1.4.29",
     "firebase-admin": "^14.0.0",

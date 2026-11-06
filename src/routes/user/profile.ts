@@ -1,4 +1,5 @@
 import { Elysia, t } from 'elysia';
+import { z } from 'zod';
 import { Permissions, isPermitted, type AbstractPermission, type RouteAuthContext } from '@karasu-lab/api-permissions';
 import { withDataSource } from '../../db/data-source';
 import { User } from '../../db/entities/user';
@@ -6,6 +7,8 @@ import { authenticate } from '../../lib/auth';
 import { ALLOWED_TYPES, MAX_FILE_BYTES, avatarKey } from '../../lib/images';
 
 type Guarded = { auth: RouteAuthContext | null; set: { status?: number | string } };
+
+const updateProfileBodySchema = z.object({ name: z.string().nullable() });
 
 function requirePermission(permission: AbstractPermission) {
   return ({ auth, set }: Guarded) => {
@@ -38,9 +41,11 @@ export const profileRoutes = (env: Env) =>
     .patch(
       '/profile',
       async ({ auth, body, set }) => {
+        const parsed = updateProfileBodySchema.safeParse(body);
+        if (!parsed.success) throw parsed.error;
         const user = await withDataSource(env, async (dataSource) => {
           const repository = dataSource.getRepository(User);
-          const result = await repository.update({ id: auth!.userId }, { name: body.name, updatedAt: new Date() });
+          const result = await repository.update({ id: auth!.userId }, { name: parsed.data.name, updatedAt: new Date() });
           if (!result.affected) return null;
           return repository.findOneBy({ id: auth!.userId });
         });
@@ -50,7 +55,7 @@ export const profileRoutes = (env: Env) =>
         }
         return { id: user.id, name: user.name, image: user.image };
       },
-      { beforeHandle: requirePermission(Permissions.profile.write), body: t.Object({ name: t.Nullable(t.String()) }) }
+      { beforeHandle: requirePermission(Permissions.profile.write) }
     )
     .post(
       '/profile/image',

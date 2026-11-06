@@ -15,6 +15,8 @@ const imageBodySchema = z.object({ image: z.string().max(2048).nullable() });
 
 const photoBodySchema = z.object({ photoURL: z.string().nullable() });
 
+const sessionsQuerySchema = z.object({ sessionId: z.string().min(1).optional() });
+
 export const internalRoutes = (env: Env) =>
   new Elysia({ prefix: '/internal' })
     .onParse(async ({ request }) => {
@@ -49,7 +51,11 @@ export const internalRoutes = (env: Env) =>
       set.status = 204;
       return null;
     })
-    .get('/users/:userId/sessions', async ({ params }) => listActiveSessions(env, params.userId))
+    .get('/users/:userId/sessions', async ({ params, query }) => {
+      const parsed = sessionsQuerySchema.safeParse(query);
+      if (!parsed.success) throw parsed.error;
+      return listActiveSessions(env, params.userId, parsed.data.sessionId);
+    })
     .delete('/users/:userId/sessions/:sessionId', async ({ params, set }) => {
       const revoked = await revokeActiveSession(env, params.userId, params.sessionId);
       if (!revoked) {

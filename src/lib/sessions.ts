@@ -17,8 +17,11 @@ function sourceFromUserAgent(userAgent: string | null): SessionSource {
   return 'app';
 }
 
-export async function listActiveSessions(env: Env, userId: string): Promise<CombinedSession[]> {
-  const [sessions, sources] = await Promise.all([fetchAuthSessions(env, userId), fetchSessionDeviceSources(env, userId)]);
+export async function listActiveSessions(env: Env, userId: string, sessionId?: string): Promise<CombinedSession[]> {
+  const [sessions, sources] = await Promise.all([
+    fetchAuthSessions(env, userId, sessionId),
+    fetchSessionDeviceSources(env, userId, sessionId),
+  ]);
   const sourceBySessionId = new Map(sources.map((row) => [row.sessionId, row.source]));
   return sessions.map((session) => ({
     ...session,

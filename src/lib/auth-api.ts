@@ -17,14 +17,20 @@ function signedAuthApiFetch(env: Env, path: string, method: string): Promise<Res
   });
 }
 
-export async function fetchAuthSessions(env: Env, userId: string): Promise<AuthSession[]> {
-  const res = await signedAuthApiFetch(env, `/api/internal/users/${encodeURIComponent(userId)}/sessions`, 'GET');
+function sessionsPath(base: string, sessionId?: string): string {
+  return sessionId ? `${base}?sessionId=${encodeURIComponent(sessionId)}` : base;
+}
+
+export async function fetchAuthSessions(env: Env, userId: string, sessionId?: string): Promise<AuthSession[]> {
+  const path = sessionsPath(`/api/internal/users/${encodeURIComponent(userId)}/sessions`, sessionId);
+  const res = await signedAuthApiFetch(env, path, 'GET');
   if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
   return authSessionsSchema.parse(await res.json());
 }
 
-export async function fetchSessionDeviceSources(env: Env, userId: string): Promise<SessionDeviceSource[]> {
-  const res = await signedAuthApiFetch(env, `/api/internal/users/${encodeURIComponent(userId)}/session-sources`, 'GET');
+export async function fetchSessionDeviceSources(env: Env, userId: string, sessionId?: string): Promise<SessionDeviceSource[]> {
+  const path = sessionsPath(`/api/internal/users/${encodeURIComponent(userId)}/session-sources`, sessionId);
+  const res = await signedAuthApiFetch(env, path, 'GET');
   if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
   return sessionDeviceSourcesSchema.parse(await res.json());
 }

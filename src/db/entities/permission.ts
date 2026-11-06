@@ -8,9 +8,6 @@ export class Permission {
   @Column({ name: 'public_id', type: 'text' })
   publicId!: string;
 
-  @Column({ name: 'numeric_id', type: 'integer' })
-  numericId!: number;
-
   @Column({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
 

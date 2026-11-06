@@ -1,10 +1,20 @@
 import { z } from 'zod';
-import { authSessionSchema, sessionDeviceSourceSchema, type AuthSession, type SessionDeviceSource } from '@karasu-lab/types/shared';
+import {
+  authSessionSchema,
+  githubRepositorySchema,
+  githubUserSchema,
+  sessionDeviceSourceSchema,
+  type AuthSession,
+  type GitHubRepository,
+  type GitHubUser,
+  type SessionDeviceSource,
+} from '@karasu-lab/types/shared';
 import { signRequest } from '@karasu-lab/utils/server';
 import { vercelProtectionBypassHeaders } from '@karasu-lab/utils/server/vercel-bypass';
 
 const authSessionsSchema = z.array(authSessionSchema);
 const sessionDeviceSourcesSchema = z.array(sessionDeviceSourceSchema);
+const githubRepositoriesSchema = z.array(githubRepositorySchema);
 
 function signedAuthApiFetch(env: Env, path: string, method: string): Promise<Response> {
   const url = `${env.AUTH_URL}${path}`;
@@ -33,6 +43,20 @@ export async function fetchSessionDeviceSources(env: Env, userId: string, sessio
   const res = await signedAuthApiFetch(env, path, 'GET');
   if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
   return sessionDeviceSourcesSchema.parse(await res.json());
+}
+
+export async function fetchGithubUser(env: Env, userId: string): Promise<GitHubUser | null> {
+  const res = await signedAuthApiFetch(env, `/api/internal/users/${encodeURIComponent(userId)}/github/user`, 'GET');
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
+  return githubUserSchema.parse(await res.json());
+}
+
+export async function fetchGithubRepositories(env: Env, userId: string): Promise<GitHubRepository[] | null> {
+  const res = await signedAuthApiFetch(env, `/api/internal/users/${encodeURIComponent(userId)}/github/repositories`, 'GET');
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
+  return githubRepositoriesSchema.parse(await res.json());
 }
 
 export async function deleteAuthSession(env: Env, userId: string, sessionId: string): Promise<boolean> {

@@ -1,5 +1,5 @@
 import { decodeJwt, importSPKI, jwtVerify, type JWTPayload } from 'jose';
-import { appAuthConfigSchema, appRegistrationSchema, type AppAuthConfig, type AppTokenPayload } from '@karasu-lab/types/server';
+import { appAuthConfigSchema, appRegistrationSchema, appTokenPayloadSchema, type AppAuthConfig } from '@karasu-lab/types/server';
 import { z } from 'zod';
 
 export { appAuthConfigSchema, appRegistrationSchema, type AppAuthConfig };
@@ -76,7 +76,7 @@ export async function verifyAppToken(request: Request, bodyText: string, configI
   const userId = internalUserId(url.pathname);
   if (!userId) return false;
 
-  let payload: AppTokenPayload & JWTPayload;
+  let payload: JWTPayload;
   try {
     const key = await importSPKI(spkiFromBase64(publicKey), 'EdDSA');
     const verified = await jwtVerify(token, key, {
@@ -84,16 +84,19 @@ export async function verifyAppToken(request: Request, bodyText: string, configI
       issuer,
       audience: url.origin,
     });
-    payload = verified.payload as AppTokenPayload & JWTPayload;
+    payload = verified.payload;
   } catch {
     return false;
   }
 
-  if (payload.sub !== userId) return false;
-  if (typeof payload.jti !== 'string' || !payload.jti) return false;
-  if (typeof payload.exp !== 'number' || !consumeTokenId(payload.jti, payload.exp)) return false;
-  if (payload.method !== request.method) return false;
-  if (payload.path !== url.pathname) return false;
-  if (payload.bodySha256 !== (await sha256Hex(bodyText))) return false;
+  const parsed = appTokenPayloadSchema.safeParse(payload);
+  if (!parsed.success) return false;
+  const claims = parsed.data;
+
+  if (claims.sub !== userId) return false;
+  if (!consumeTokenId(claims.jti, claims.exp)) return false;
+  if (claims.method !== request.method) return false;
+  if (claims.path !== url.pathname) return false;
+  if (claims.bodySha256 !== (await sha256Hex(bodyText))) return false;
   return true;
 }

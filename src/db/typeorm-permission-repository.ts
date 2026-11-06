@@ -4,7 +4,7 @@ import { ApiKeyPermission } from './entities/api-key-permission';
 import { Permission } from './entities/permission';
 
 function toRecord(permission: Permission): PermissionRecord {
-  return { id: permission.id, publicId: permission.publicId, numericId: permission.numericId };
+  return { id: permission.id, publicId: permission.publicId };
 }
 
 export class TypeOrmPermissionRepository implements PermissionRepository {
@@ -15,7 +15,7 @@ export class TypeOrmPermissionRepository implements PermissionRepository {
   }
 
   async findActive(): Promise<PermissionRecord[]> {
-    const rows = await this.dataSource.getRepository(Permission).find({ where: { deletedAt: IsNull() }, order: { numericId: 'ASC' } });
+    const rows = await this.dataSource.getRepository(Permission).find({ where: { deletedAt: IsNull() }, order: { publicId: 'ASC' } });
     return rows.map(toRecord);
   }
 

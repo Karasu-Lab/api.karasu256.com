@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
 import { z } from 'zod';
-import { Permissions, isPermitted, type AbstractPermission, type RouteAuthContext } from '@karasu-lab/api-permissions';
+import { isPermitted, type RouteAuthContext } from '@karasu-lab/api-permissions';
 import { withDataSource } from '../../db/data-source';
 import { User } from '../../db/entities/user';
 import { authenticate } from '../../lib/auth';
@@ -10,7 +10,7 @@ type Guarded = { auth: RouteAuthContext | null; set: { status?: number | string 
 
 const updateProfileBodySchema = z.object({ name: z.string().nullable() });
 
-function requirePermission(permission: AbstractPermission) {
+function requirePermission(permission: string) {
   return ({ auth, set }: Guarded) => {
     if (!auth) {
       set.status = 401;
@@ -36,7 +36,7 @@ export const profileRoutes = (env: Env) =>
         }
         return { id: user.id, name: user.name, image: user.image };
       },
-      { beforeHandle: requirePermission(Permissions.profile.read) }
+      { beforeHandle: requirePermission('users:profile.read') }
     )
     .patch(
       '/profile',
@@ -55,7 +55,7 @@ export const profileRoutes = (env: Env) =>
         }
         return { id: user.id, name: user.name, image: user.image };
       },
-      { beforeHandle: requirePermission(Permissions.profile.write) }
+      { beforeHandle: requirePermission('users:profile.write') }
     )
     .post(
       '/profile/image',
@@ -82,7 +82,7 @@ export const profileRoutes = (env: Env) =>
         }
         return { image };
       },
-      { beforeHandle: requirePermission(Permissions.profile.write), body: t.Object({ file: t.File() }) }
+      { beforeHandle: requirePermission('users:profile.write'), body: t.Object({ file: t.File() }) }
     )
     .get(
       '/profile/image',
@@ -96,5 +96,5 @@ export const profileRoutes = (env: Env) =>
           headers: { 'Content-Type': object.httpMetadata?.contentType ?? 'application/octet-stream' },
         });
       },
-      { beforeHandle: requirePermission(Permissions.profile.read) }
+      { beforeHandle: requirePermission('users:profile.read') }
     );

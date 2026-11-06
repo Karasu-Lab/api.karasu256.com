@@ -9,6 +9,7 @@ import { assetLinkRoutes } from './routes/asset-links';
 import { internalRoutes } from './routes/internal';
 import { metaRoutes } from './routes/meta';
 import { githubProxyRoutes } from './routes/github-proxy';
+import { githubRoutes } from './routes/github';
 import { mojangProxyRoutes } from './routes/mojang-proxy';
 import { permissionRoutes } from './routes/permissions';
 import { uploadRoutes } from './routes/upload';
@@ -16,10 +17,10 @@ import { userRoutes } from './routes/user';
 
 const env = resolveEnv(cfEnv as Env);
 
-/** Workers do not allow generating code at runtime. */
 const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typebox' })
   .use(errorHandler())
   .use(userRoutes(env))
+  .use(githubRoutes(env))
   .use(internalRoutes(env))
   .use(permissionRoutes(env))
   .use(apiKeyRoutes(env))
@@ -29,7 +30,6 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(mojangProxyRoutes())
   .use(githubProxyRoutes());
 
-/** Collapses repeated slashes so a caller's base URL with a trailing slash still reaches the route. */
 function normalizePath(request: Request): Request {
   const url = new URL(request.url);
   const pathname = url.pathname.replace(/\/{2,}/g, '/');

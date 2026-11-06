@@ -1,11 +1,9 @@
 import { Elysia } from 'elysia';
 import { z } from 'zod';
-import { ALL_PERMISSIONS, PermissionService, UnknownPermissionError, toOauthScope } from '@karasu-lab/api-permissions';
+import { PermissionService, UnknownPermissionError, toOauthScope } from '@karasu-lab/api-permissions';
 import { withDataSource } from '../db/data-source';
 import { TypeOrmPermissionRepository } from '../db/typeorm-permission-repository';
 import { isInternalCaller } from '../lib/auth';
-
-const AVAILABLE_SCOPES = ALL_PERMISSIONS.map(toOauthScope);
 
 const grantPermissionsBodySchema = z.object({ permissions: z.array(z.string()) });
 
@@ -18,7 +16,17 @@ function withPermissionService<T>(env: Env, work: (service: PermissionService) =
 export const permissionRoutes = (env: Env) =>
   new Elysia()
     .get('/permissions', () => withPermissionService(env, (service) => service.listActivePermissions()))
-    .get('/permissions/scopes', () => AVAILABLE_SCOPES)
+    .get('/permissions/scopes', () =>
+      withPermissionService(env, async (service) => (await service.listActivePermissions()).map(toOauthScope))
+    )
+    .get('/:operation/permissions', async ({ params, set }) => {
+      const permissions = await withPermissionService(env, (service) => service.listOperationPermissions(params.operation));
+      if (permissions.length === 0) {
+        set.status = 404;
+        return { error: 'unknown_operation' };
+      }
+      return { operation: params.operation, permissions: permissions.map((permission) => permission.publicId) };
+    })
     .group('/internal', (internal) =>
       internal
         .onBeforeHandle(({ request, set }) => {

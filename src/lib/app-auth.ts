@@ -35,7 +35,12 @@ function consumeTokenId(jti: string, exp: number): boolean {
   return true;
 }
 
-const APP_RESOLUTION_TTL_MS = 60_000;
+export const appAuthConfigSchema = z.object({
+  registrationPath: z.string().startsWith('/').default('/.well-known/app-public-key'),
+  resolutionTtlMs: z.number().int().positive().default(60_000),
+});
+
+export type AppAuthConfig = z.infer<typeof appAuthConfigSchema>;
 
 const appIdSchema = z.string().regex(/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/i);
 
@@ -51,23 +56,24 @@ interface ResolvedApp {
 
 const resolvedApps = new Map<string, ResolvedApp>();
 
-async function resolveAppPublicKey(issuer: string): Promise<string | null> {
+async function resolveAppPublicKey(issuer: string, config: AppAuthConfig): Promise<string | null> {
   const cached = resolvedApps.get(issuer);
   if (cached && cached.expiresAt > Date.now()) return cached.publicKey;
   if (!appIdSchema.safeParse(issuer).success || issuer.includes('..')) return null;
   try {
-    const res = await fetch(`https://${issuer}/.well-known/app-public-key`, { headers: { accept: 'application/json' } });
+    const res = await fetch(`https://${issuer}${config.registrationPath}`, { headers: { accept: 'application/json' } });
     if (!res.ok) return null;
     const parsed = appRegistrationSchema.safeParse(await res.json());
     if (!parsed.success || parsed.data.appId !== issuer) return null;
-    resolvedApps.set(issuer, { publicKey: parsed.data.publicKey, expiresAt: Date.now() + APP_RESOLUTION_TTL_MS });
+    resolvedApps.set(issuer, { publicKey: parsed.data.publicKey, expiresAt: Date.now() + config.resolutionTtlMs });
     return parsed.data.publicKey;
   } catch {
     return null;
   }
 }
 
-export async function verifyAppToken(request: Request, bodyText: string): Promise<boolean> {
+export async function verifyAppToken(request: Request, bodyText: string, configInput?: Partial<AppAuthConfig>): Promise<boolean> {
+  const config = appAuthConfigSchema.parse(configInput ?? {});
   const token = request.headers.get('x-app-token');
   if (!token) return false;
 
@@ -78,7 +84,7 @@ export async function verifyAppToken(request: Request, bodyText: string): Promis
     return false;
   }
   if (!issuer) return false;
-  const publicKey = await resolveAppPublicKey(issuer);
+  const publicKey = await resolveAppPublicKey(issuer, config);
   if (!publicKey) return false;
 
   const url = new URL(request.url);

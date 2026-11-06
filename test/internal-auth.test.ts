@@ -3,7 +3,7 @@ import { memoryAdapter } from 'better-auth/adapters/memory';
 import { jwt } from 'better-auth/plugins/jwt';
 import { createHash, createHmac, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { verifyAppToken } from '../src/lib/app-auth';
+import { appAuthConfigSchema, verifyAppToken, type AppAuthConfig } from '../src/lib/app-auth';
 import { verifySessionJwt } from '../src/lib/auth';
 
 vi.mock('../src/db/data-source', () => ({
@@ -102,6 +102,8 @@ describe('internal user endpoint authentication', () => {
 
   const env = { AUTH_URL } as unknown as Env;
 
+  const appAuthConfig: AppAuthConfig = { ...appAuthConfigSchema.parse({}), resolutionTtlMs: 1_000 };
+
   it('verifies the session JWT minted by the MCP session token exchange', async () => {
     const session = await verifySessionJwt(sessionJwtFromExchange, env);
     expect(session?.userId).toBe(userId);
@@ -141,7 +143,7 @@ describe('internal user endpoint authentication', () => {
       headers: { 'x-app-token': mcpAppToken(body), authorization: `Bearer ${sessionJwtFromExchange}` },
       body,
     });
-    await expect(verifyAppToken(request, body)).resolves.toBe(true);
+    await expect(verifyAppToken(request, body, appAuthConfig)).resolves.toBe(true);
   });
 
   it('rejects the app token once the app registration is gone', async () => {
@@ -152,12 +154,12 @@ describe('internal user endpoint authentication', () => {
         headers: { 'x-app-token': mcpAppToken(body) },
         body,
       });
-    await expect(verifyAppToken(buildRequest(), body)).resolves.toBe(true);
+    await expect(verifyAppToken(buildRequest(), body, appAuthConfig)).resolves.toBe(true);
 
     issuerState.mcpRegistered = false;
     vi.useFakeTimers();
-    vi.advanceTimersByTime(10 * 60 * 1000);
+    vi.advanceTimersByTime(2_000);
 
-    await expect(verifyAppToken(buildRequest(), body)).resolves.toBe(false);
+    await expect(verifyAppToken(buildRequest(), body, appAuthConfig)).resolves.toBe(false);
   });
 });

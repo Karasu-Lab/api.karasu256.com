@@ -12,8 +12,8 @@ importers:
         specifier: 0.1.0-4b04f47
         version: 0.1.0-4b04f47
       '@karasu-lab/types':
-        specifier: 0.1.0-cbf29c9
-        version: 0.1.0-cbf29c9
+        specifier: 0.1.0-5448699
+        version: 0.1.0-5448699
       '@karasu-lab/utils':
         specifier: 0.1.0-be51f04
         version: 0.1.0-be51f04(@better-auth/core@1.7.14(@better-auth/utils@0.5.1)(@better-fetch/fetch@1.3.3)(@opentelemetry/api@1.10.0)(better-call@1.4.4(zod@4.6.7))(jose@6.2.14)(kysely@0.29.7)(nanostores@1.5.5))(@better-auth/utils@0.5.1)(@better-fetch/fetch@1.3.3)(@karasu-lab/api-permissions@0.1.0-4b04f47)(@opentelemetry/api@1.10.0)(better-call@1.4.4(zod@4.6.7))(nanostores@1.5.5)(next@15.5.28(@opentelemetry/api@1.10.0)(@playwright/test@1.64.1)(@types/node@26.6.6)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.23.1)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@5.1.0(@opentelemetry/api@1.10.0)(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(yaml@2.9.1)))
@@ -738,8 +738,8 @@ packages:
   '@karasu-lab/api-permissions@0.1.0-4b04f47':
     resolution: {integrity: sha512-waPf+NZB15QztOTOLcZdmy/QfXJ/YFJgZGlIveSZcNRGdmStfAxNnjuddZO9CH/iVd0+qkud+7b+W8+Cc3qeUQ==, tarball: https://npm.pkg.github.com/download/@karasu-lab/api-permissions/0.1.0-4b04f47/b0dcdfd39bdfdfb806b719eaedaeba1edfff5dca}
 
-  '@karasu-lab/types@0.1.0-cbf29c9':
-    resolution: {integrity: sha512-sxJZ9eVrEO89LFt0SlDed/0dYksfma+I502xbdJDh588ZB2zFV2oNpExG/rpekhUmj3i0LQE8FMS7swU750AgA==, tarball: https://npm.pkg.github.com/download/@karasu-lab/types/0.1.0-cbf29c9/2a2da99bc1868103f9109e66ea7d5946901926f9}
+  '@karasu-lab/types@0.1.0-5448699':
+    resolution: {integrity: sha512-rZ6VFjNYFhjpHuufDz2Cjl60k0ciU07owgsN0dNF0OH1YKV6/hmBa5j9UZ3F188MXNjYb3TA8rVV1hdiFTh5CA==, tarball: https://npm.pkg.github.com/download/@karasu-lab/types/0.1.0-5448699/43278958fa1697c300347524cfa04ee65650ea58}
 
   '@karasu-lab/utils@0.1.0-be51f04':
     resolution: {integrity: sha512-I6U7RD31Se7i7e+45HRkdTwo+Jm8sc+eMNZh81Z9kW1U+P+JHQINT/hRtVeshTylmKBGi+LjMqV3e+2IXA1bpQ==, tarball: https://npm.pkg.github.com/download/@karasu-lab/utils/0.1.0-be51f04/3b0dd9ed7fa40b441492d2e8c919733a916d0ba8}
@@ -3195,7 +3195,7 @@ snapshots:
 
   '@karasu-lab/api-permissions@0.1.0-4b04f47': {}
 
-  '@karasu-lab/types@0.1.0-cbf29c9':
+  '@karasu-lab/types@0.1.0-5448699':
     dependencies:
       zod: 4.6.7
 

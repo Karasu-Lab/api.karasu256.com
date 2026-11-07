@@ -39,7 +39,7 @@ export const permissionRoutes = (env: Env) =>
           const parsed = grantPermissionsBodySchema.safeParse(body);
           if (!parsed.success) throw parsed.error;
           try {
-            return await withPermissionService(env, (service) => service.grant(params.id, parsed.data.permissions));
+            return await withPermissionService(env, (service) => service.setGranted(params.id, parsed.data.permissions));
           } catch (err) {
             if (!(err instanceof UnknownPermissionError)) throw err;
             set.status = 400;

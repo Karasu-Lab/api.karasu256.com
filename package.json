@@ -23,7 +23,7 @@
     "yaml": "^2.9.0"
   },
   "dependencies": {
-    "@karasu-lab/api-permissions": "0.1.0-aaf3d2c",
+    "@karasu-lab/api-permissions": "0.1.0-70bd6e4",
     "@karasu-lab/types": "0.1.0-ac1a980",
     "@karasu-lab/utils": "0.1.0-be51f04",
     "elysia": "^1.4.29",

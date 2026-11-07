@@ -28,6 +28,15 @@ export class TypeOrmPermissionRepository implements PermissionRepository {
     await this.dataSource.getRepository(ApiKeyPermission).insert(permissionIds.map((permissionId) => ({ apiKeyId, permissionId })));
   }
 
+  async replaceGranted(apiKeyId: string, permissionIds: readonly string[]): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      await manager.getRepository(ApiKeyPermission).delete({ apiKeyId });
+      if (permissionIds.length > 0) {
+        await manager.getRepository(ApiKeyPermission).insert(permissionIds.map((permissionId) => ({ apiKeyId, permissionId })));
+      }
+    });
+  }
+
   async findGranted(apiKeyIds: readonly string[]): Promise<GrantedPermissionRecord[]> {
     const rows = await this.dataSource.getRepository(ApiKeyPermission).find({
       where: { apiKeyId: In([...apiKeyIds]), permission: { deletedAt: IsNull() } },

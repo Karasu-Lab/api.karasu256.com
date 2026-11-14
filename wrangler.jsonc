@@ -25,7 +25,6 @@
     "GIT_BRANCH": "main",
     "AUTH_URL": "https://api-auth.karasu256.com",
     "CDN_BASE_URL": "https://cdn.karasu256.com",
-    "STORAGE_BUCKET": "cdn",
   },
   "preview_urls": true,
   "previews": {
@@ -43,7 +42,6 @@
       "GIT_BRANCH": "preview",
       "AUTH_URL": "https://dev-api-auth.karasu256.com",
       "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
-      "STORAGE_BUCKET": "cdn",
     },
   },
   "env": {
@@ -64,10 +62,6 @@
         "CDN_BASE_URL": "http://localhost:8788",
         "DATABASE_URL": "postgres://postgres:postgres@localhost:5433/karasu256",
         "INTERNAL_API_SECRET": "local-development-internal-api-secret",
-        "STORAGE_ENDPOINT": "http://localhost:8333",
-        "STORAGE_BUCKET": "api-local",
-        "STORAGE_ACCESS_KEY_ID": "local-development-access-key-id",
-        "STORAGE_SECRET_ACCESS_KEY": "local-development-secret-access-key",
       },
     },
   },

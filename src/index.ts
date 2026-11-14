@@ -6,6 +6,7 @@ import { errorHandler } from './lib/error-handler';
 import { runStartupMigrations } from './lib/startup-migration';
 import { apiKeyRoutes } from './routes/api-keys';
 import { assetLinkRoutes } from './routes/asset-links';
+import { avatarRoutes } from './routes/avatars';
 import { internalRoutes } from './routes/internal';
 import { metaRoutes } from './routes/meta';
 import { githubProxyRoutes } from './routes/github-proxy';
@@ -21,6 +22,7 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(errorHandler())
   .use(userRoutes(env))
   .use(githubRoutes(env))
+  .use(avatarRoutes(env))
   .use(internalRoutes(env))
   .use(permissionRoutes(env))
   .use(apiKeyRoutes(env))

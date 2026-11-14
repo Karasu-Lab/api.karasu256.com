@@ -8,12 +8,17 @@ import { internalUserId, verifyAppToken } from '../lib/app-auth';
 import { verifySessionJwt } from '../lib/auth';
 import { listActiveSessions, revokeActiveSession } from '../lib/sessions';
 import { getFirebasePhotoURL, setFirebasePhotoURL } from '../lib/firebase';
+import { avatarPath } from '../lib/avatars';
+import { ALLOWED_TYPES } from '../lib/images';
+import { presignUploadUrl } from '../lib/presign';
 
 const rawBodies = new WeakMap<Request, string>();
 
 const imageBodySchema = z.object({ image: z.string().max(2048).nullable() });
 
 const photoBodySchema = z.object({ photoURL: z.string().nullable() });
+
+const avatarUploadUrlBodySchema = z.object({ contentType: z.string().min(1) });
 
 const sessionsQuerySchema = z.object({ sessionId: z.string().min(1).optional() });
 
@@ -79,6 +84,16 @@ export const internalRoutes = (env: Env) =>
       );
       if (!result.affected) throw new NotFoundError();
       return { image: parsed.data.image };
+    })
+    .post('/users/:userId/avatar-upload-url', async ({ params, body, set }) => {
+      const parsed = avatarUploadUrlBodySchema.safeParse(body);
+      if (!parsed.success) throw parsed.error;
+      if (!ALLOWED_TYPES.has(parsed.data.contentType)) {
+        set.status = 415;
+        return { error: 'unsupported_media_type' };
+      }
+      const path = avatarPath(params.userId, 'default');
+      return { uploadUrl: presignUploadUrl(env, path, parsed.data.contentType), path };
     })
     .post('/users/:userId/firebase-photo', async ({ params, body }) => {
       const parsed = photoBodySchema.safeParse(body);

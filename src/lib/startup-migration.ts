@@ -2,14 +2,19 @@ import type { DataSource } from 'typeorm';
 import { withDataSource } from '../db/data-source';
 import { FirebaseUser } from '../db/entities/firebase-user';
 import { User } from '../db/entities/user';
+import { avatarPath } from './avatars';
 import { cdnUrl, getCdnFile, inspectObject, upsertCdnFile } from './cdn-files';
 import { getFirebasePhotoURL, setFirebasePhotoURL } from './firebase';
 
-const MIGRATION_NAME = 'avatars-v1';
 const BATCH_SIZE = 50;
 const LEASE_MS = 60_000;
-const SOURCE_PREFIX = 'users/';
-const SOURCE_KEY = /^users\/([^/]+)\/avatar\.png$/;
+
+interface AvatarMigration {
+  name: string;
+  prefix: string;
+  source: RegExp;
+  target: (userId: string) => string;
+}
 
 const SCHEMA_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS cdn_files (
@@ -30,22 +35,18 @@ const SCHEMA_STATEMENTS = [
   )`,
 ];
 
-function targetKey(userId: string): string {
-  return `u/profiles/${userId}/avatar.png`;
-}
-
 function pointsTo(url: string | null | undefined, legacyUrl: string): boolean {
   return !!url && url.split('?')[0] === legacyUrl;
 }
 
-async function migrateAvatar(env: Env, dataSource: DataSource, key: string): Promise<void> {
-  const match = SOURCE_KEY.exec(key);
+async function migrateAvatar(env: Env, dataSource: DataSource, migration: AvatarMigration, key: string): Promise<void> {
+  const match = migration.source.exec(key);
   if (!match) return;
   const userId = match[1];
   const source = await inspectObject(env, key);
   if (!source) return;
 
-  const target = targetKey(userId);
+  const target = migration.target(userId);
   const existing = await getCdnFile(env, target);
   if (existing?.sha256 !== source.sha256) {
     await env.CLOUDFLARE_IMAGES.put(target, source.body, { httpMetadata: source.httpMetadata });
@@ -76,17 +77,15 @@ async function migrateAvatar(env: Env, dataSource: DataSource, key: string): Pro
   }
 }
 
-export async function runStartupMigrations(env: Env): Promise<void> {
+async function runAvatarMigration(env: Env, migration: AvatarMigration): Promise<boolean> {
   const db = env.CDN_DB;
-  await db.batch(SCHEMA_STATEMENTS.map((statement) => db.prepare(statement)));
-
   const state = await db
     .prepare('SELECT completed_at FROM cdn_migrations WHERE name = ?')
-    .bind(MIGRATION_NAME)
+    .bind(migration.name)
     .first<{ completed_at: string | null }>();
-  if (state?.completed_at) return;
+  if (state?.completed_at) return true;
 
-  await db.prepare('INSERT OR IGNORE INTO cdn_migrations (name) VALUES (?)').bind(MIGRATION_NAME).run();
+  await db.prepare('INSERT OR IGNORE INTO cdn_migrations (name) VALUES (?)').bind(migration.name).run();
   const now = Date.now();
   const lease = await db
     .prepare(
@@ -94,23 +93,23 @@ export async function runStartupMigrations(env: Env): Promise<void> {
        WHERE name = ? AND completed_at IS NULL AND (lease_until IS NULL OR lease_until < ?)
        RETURNING name, cursor`
     )
-    .bind(now + LEASE_MS, MIGRATION_NAME, now)
+    .bind(now + LEASE_MS, migration.name, now)
     .first<{ name: string; cursor: string | null }>();
-  if (!lease) return;
+  if (!lease) return false;
 
   const listed = await env.CLOUDFLARE_IMAGES.list({
-    prefix: SOURCE_PREFIX,
+    prefix: migration.prefix,
     limit: BATCH_SIZE,
     ...(lease.cursor ? { cursor: lease.cursor } : {}),
   });
 
-  if (listed.objects.some((object) => SOURCE_KEY.test(object.key))) {
+  if (listed.objects.some((object) => migration.source.test(object.key))) {
     await withDataSource(env, async (dataSource) => {
       for (const object of listed.objects) {
         try {
-          await migrateAvatar(env, dataSource, object.key);
+          await migrateAvatar(env, dataSource, migration, object.key);
         } catch (error) {
-          console.error(`Startup migration ${MIGRATION_NAME} failed for ${object.key}`, error);
+          console.error(`Startup migration ${migration.name} failed for ${object.key}`, error);
         }
       }
     });
@@ -119,12 +118,31 @@ export async function runStartupMigrations(env: Env): Promise<void> {
   if (listed.truncated) {
     await db
       .prepare('UPDATE cdn_migrations SET cursor = ?, lease_until = NULL WHERE name = ?')
-      .bind(listed.cursor, MIGRATION_NAME)
+      .bind(listed.cursor, migration.name)
       .run();
-  } else {
-    await db
-      .prepare('UPDATE cdn_migrations SET cursor = NULL, lease_until = NULL, completed_at = ? WHERE name = ?')
-      .bind(new Date().toISOString(), MIGRATION_NAME)
-      .run();
+    return false;
   }
+  await db
+    .prepare('UPDATE cdn_migrations SET cursor = NULL, lease_until = NULL, completed_at = ? WHERE name = ?')
+    .bind(new Date().toISOString(), migration.name)
+    .run();
+  return true;
+}
+
+export async function runStartupMigrations(env: Env): Promise<void> {
+  const db = env.CDN_DB;
+  await db.batch(SCHEMA_STATEMENTS.map((statement) => db.prepare(statement)));
+  const legacyMigrated = await runAvatarMigration(env, {
+    name: 'avatars-v1',
+    prefix: 'users/',
+    source: /^users\/([^/]+)\/avatar\.png$/,
+    target: (userId) => `u/profiles/${userId}/avatar.png`,
+  });
+  if (!legacyMigrated) return;
+  await runAvatarMigration(env, {
+    name: 'avatars-v2',
+    prefix: 'u/profiles/',
+    source: /^u\/profiles\/([^/]+)\/avatar\.png$/,
+    target: (userId) => avatarPath(userId, 'default'),
+  });
 }

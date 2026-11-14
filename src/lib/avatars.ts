@@ -16,6 +16,20 @@ async function readAvatarSource(source: string): Promise<{ body: ArrayBuffer; co
   return { body: await response.arrayBuffer(), contentType: response.headers.get('content-type')?.split(';')[0].trim() ?? '' };
 }
 
+export async function signedAvatarUploadUrl(env: Env, sessionJwt: string, path: string): Promise<string> {
+  const res = await fetch(`${env.CDN_BASE_URL}/upload/ticket`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionJwt}` },
+    body: JSON.stringify({ path, ttlSeconds: 300 }),
+  });
+  if (!res.ok) throw new Error(`cdn.karasu256.com responded ${res.status} for ${res.url}`);
+  const { ticket } = z.object({ ticket: z.string().min(1) }).parse(await res.json());
+  const url = new URL('/upload/signed', env.CDN_BASE_URL);
+  url.searchParams.set('path', path);
+  url.searchParams.set('ticket', ticket);
+  return url.toString();
+}
+
 export async function storeProviderAvatar(env: Env, userId: string, providerId: string, source: string): Promise<string> {
   const { body, contentType } = await readAvatarSource(source);
   if (!isAllowedUpload(contentType, body.byteLength)) throw new Error('Unsupported avatar image');

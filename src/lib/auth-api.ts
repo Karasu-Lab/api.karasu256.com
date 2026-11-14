@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import {
-  authSessionSchema,
   githubRepositorySchema,
   githubUserSchema,
-  sessionDeviceSourceSchema,
   type AuthSession,
   type GitHubRepository,
   type GitHubUser,
@@ -12,8 +10,6 @@ import {
 import { signRequest } from '@karasu-lab/utils/server';
 import { vercelProtectionBypassHeaders } from '@karasu-lab/utils/server/vercel-bypass';
 
-const authSessionsSchema = z.array(authSessionSchema);
-const sessionDeviceSourcesSchema = z.array(sessionDeviceSourceSchema);
 const githubRepositoriesSchema = z.array(githubRepositorySchema);
 
 function signedAuthApiFetch(env: Env, path: string, method: string): Promise<Response> {
@@ -35,14 +31,14 @@ export async function fetchAuthSessions(env: Env, userId: string, sessionId?: st
   const path = sessionsPath(`/api/internal/users/${encodeURIComponent(userId)}/sessions`, sessionId);
   const res = await signedAuthApiFetch(env, path, 'GET');
   if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
-  return authSessionsSchema.parse(await res.json());
+  return (await res.json()) as AuthSession[];
 }
 
 export async function fetchSessionDeviceSources(env: Env, userId: string, sessionId?: string): Promise<SessionDeviceSource[]> {
   const path = sessionsPath(`/api/internal/users/${encodeURIComponent(userId)}/session-sources`, sessionId);
   const res = await signedAuthApiFetch(env, path, 'GET');
   if (!res.ok) throw new Error(`api-auth.karasu256.com responded ${res.status} for ${res.url}`);
-  return sessionDeviceSourcesSchema.parse(await res.json());
+  return (await res.json()) as SessionDeviceSource[];
 }
 
 export async function fetchGithubUser(env: Env, userId: string): Promise<GitHubUser | null> {

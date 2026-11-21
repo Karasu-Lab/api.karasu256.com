@@ -33,7 +33,7 @@ export const internalRoutes = (env: Env) =>
       const header = request.headers.get('authorization');
       const session = header?.startsWith('Bearer ') ? await verifySessionJwt(header.slice(7), env) : null;
       const bodyText = rawBodies.get(request) ?? '';
-      if (!userId || session?.userId !== userId || !(await verifyAppToken(request, bodyText))) {
+      if (!userId || session?.userId !== userId || !(await verifyAppToken(request, bodyText, { local: env.APP_ENV === 'local' }))) {
         set.status = 401;
         return { error: 'Unauthorized' };
       }

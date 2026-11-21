@@ -44,9 +44,17 @@ const resolvedApps = new Map<string, ResolvedApp>();
 async function resolveAppPublicKey(issuer: string, config: AppAuthConfig): Promise<string | null> {
   const cached = resolvedApps.get(issuer);
   if (cached && cached.expiresAt > Date.now()) return cached.publicKey;
-  if (!appIdSchema.safeParse(issuer).success || issuer.includes('..')) return null;
+  const validIssuer = config.local
+    ? z
+        .string()
+        .regex(/^localhost:\d+$/)
+        .safeParse(issuer).success
+    : appIdSchema.safeParse(issuer).success && !issuer.includes('..');
+  if (!validIssuer) return null;
   try {
-    const res = await fetch(`https://${issuer}${config.registrationPath}`, { headers: { accept: 'application/json' } });
+    const res = await fetch(`${config.local ? 'http' : 'https'}://${issuer}${config.registrationPath}`, {
+      headers: { accept: 'application/json' },
+    });
     if (!res.ok) return null;
     const parsed = appRegistrationSchema.safeParse(await res.json());
     if (!parsed.success || parsed.data.appId !== issuer) return null;

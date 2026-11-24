@@ -1,6 +1,7 @@
 import { Elysia, ValidationError } from 'elysia';
 import { JOSEError } from 'jose/errors';
 import { z } from 'zod';
+import { HttpError } from './errors';
 
 type ErrorLocation = 'body' | 'query' | 'params' | 'headers' | 'cookie' | 'response' | 'unknown';
 
@@ -33,6 +34,11 @@ export const errorHandler = () =>
   new Elysia({ name: 'error-handler' }).onError({ as: 'global' }, ({ code, error, request, set }) => {
     const { method } = request;
     const { pathname } = new URL(request.url);
+
+    if (error instanceof HttpError) {
+      set.status = error.status;
+      return { error: error.message, ...(error.reason ? { reason: error.reason } : {}) };
+    }
 
     if (error instanceof z.ZodError) {
       console.error(JSON.stringify({ level: 'error', kind: 'validation', method, pathname, issues: formatIssues('unknown', error) }));

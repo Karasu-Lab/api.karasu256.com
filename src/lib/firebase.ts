@@ -1,25 +1,22 @@
 import { importPKCS8, SignJWT } from 'jose';
 import { FirebaseRequestError } from './firebase-request-error';
 
-const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const SCOPE = 'https://www.googleapis.com/auth/cloud-platform';
-
 let cachedToken: { value: string; expiresAt: number } | undefined;
 
-async function getAccessToken(env: Env): Promise<string> {
+async function getAccessToken(env: Env, tokenUrl: string = 'https://oauth2.googleapis.com/token'): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) return cachedToken.value;
 
   const key = await importPKCS8(env.FIREBASE_ADMIN_PRIVATE_KEY, 'RS256');
-  const assertion = await new SignJWT({ scope: SCOPE })
+  const assertion = await new SignJWT({ scope: 'https://www.googleapis.com/auth/cloud-platform' })
     .setProtectedHeader({ alg: 'RS256', typ: 'JWT' })
     .setIssuer(env.FIREBASE_ADMIN_CLIENT_EMAIL)
     .setSubject(env.FIREBASE_ADMIN_CLIENT_EMAIL)
-    .setAudience(TOKEN_URL)
+    .setAudience(tokenUrl)
     .setIssuedAt()
     .setExpirationTime('55m')
     .sign(key);
 
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion }),

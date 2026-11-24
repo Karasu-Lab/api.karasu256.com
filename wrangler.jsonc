@@ -10,7 +10,10 @@
       "invocation_logs": false,
     },
   },
-  "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
+  "routes": [
+    { "pattern": "api.karasu256.com", "custom_domain": true },
+    { "pattern": "dev-api.karasu256.com", "custom_domain": true, "previews_enabled": true, "enabled": false },
+  ],
   "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "cdn" }],
   "d1_databases": [
     {

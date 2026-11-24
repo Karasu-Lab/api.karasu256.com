@@ -1,9 +1,14 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { PermissionService, type RouteAuthContext } from '@karasu-lab/api-permissions';
-import { oauthTokenClaimsSchema } from '@karasu-lab/types/server';
+import { z } from 'zod';
 import { vercelProtectionBypassHeaders } from '@karasu-lab/utils/server/vercel-bypass';
 import { withDataSource } from '../db/data-source';
 import { TypeOrmPermissionRepository } from '../db/typeorm-permission-repository';
+
+const oauthTokenClaimsSchema = z.object({
+  sub: z.string().min(1),
+  scope: z.string().optional(),
+});
 
 const jwksByIssuer = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 

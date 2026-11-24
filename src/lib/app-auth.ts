@@ -1,8 +1,27 @@
 import { decodeJwt, importSPKI, jwtVerify, type JWTPayload } from 'jose';
-import { appAuthConfigSchema, appRegistrationSchema, appTokenPayloadSchema, type AppAuthConfig } from '@karasu-lab/types/server';
 import { z } from 'zod';
 
-export { appAuthConfigSchema, appRegistrationSchema, type AppAuthConfig };
+export const appAuthConfigSchema = z.object({
+  registrationPath: z.string().startsWith('/').default('/.well-known/app-public-key'),
+  resolutionTtlMs: z.number().int().positive().default(60_000),
+  local: z.boolean().default(false),
+});
+
+export type AppAuthConfig = z.infer<typeof appAuthConfigSchema>;
+
+const appRegistrationSchema = z.object({
+  appId: z.string(),
+  publicKey: z.string().min(1),
+});
+
+const appTokenPayloadSchema = z.object({
+  sub: z.string().min(1),
+  jti: z.string().min(1),
+  exp: z.number(),
+  method: z.string(),
+  path: z.string(),
+  bodySha256: z.string(),
+});
 
 async function sha256Hex(text: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));

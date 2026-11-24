@@ -6,34 +6,12 @@ import { avatarPath } from './avatars';
 import { cdnUrl, getCdnFile, inspectObject, upsertCdnFile } from './cdn-files';
 import { getFirebasePhotoURL, setFirebasePhotoURL } from './firebase';
 
-const BATCH_SIZE = 50;
-const LEASE_MS = 60_000;
-
 interface AvatarMigration {
   name: string;
   prefix: string;
   source: RegExp;
   target: (userId: string) => string;
 }
-
-const SCHEMA_STATEMENTS = [
-  `CREATE TABLE IF NOT EXISTS cdn_files (
-    path TEXT PRIMARY KEY,
-    sha256 TEXT NOT NULL,
-    content_type TEXT NOT NULL,
-    size INTEGER NOT NULL,
-    uploader_id TEXT,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  )`,
-  'CREATE INDEX IF NOT EXISTS cdn_files_uploader_id_idx ON cdn_files (uploader_id)',
-  `CREATE TABLE IF NOT EXISTS cdn_migrations (
-    name TEXT PRIMARY KEY,
-    cursor TEXT,
-    lease_until INTEGER,
-    completed_at TEXT
-  )`,
-];
 
 function pointsTo(url: string | null | undefined, legacyUrl: string): boolean {
   return !!url && url.split('?')[0] === legacyUrl;
@@ -93,13 +71,13 @@ async function runAvatarMigration(env: Env, migration: AvatarMigration): Promise
        WHERE name = ? AND completed_at IS NULL AND (lease_until IS NULL OR lease_until < ?)
        RETURNING name, cursor`
     )
-    .bind(now + LEASE_MS, migration.name, now)
+    .bind(now + 60_000,migration.name, now)
     .first<{ name: string; cursor: string | null }>();
   if (!lease) return false;
 
   const listed = await env.CLOUDFLARE_IMAGES.list({
     prefix: migration.prefix,
-    limit: BATCH_SIZE,
+    limit: 50,
     ...(lease.cursor ? { cursor: lease.cursor } : {}),
   });
 
@@ -131,7 +109,26 @@ async function runAvatarMigration(env: Env, migration: AvatarMigration): Promise
 
 export async function runStartupMigrations(env: Env): Promise<void> {
   const db = env.CDN_DB;
-  await db.batch(SCHEMA_STATEMENTS.map((statement) => db.prepare(statement)));
+  await db.batch(
+    [
+      `CREATE TABLE IF NOT EXISTS cdn_files (
+        path TEXT PRIMARY KEY,
+        sha256 TEXT NOT NULL,
+        content_type TEXT NOT NULL,
+        size INTEGER NOT NULL,
+        uploader_id TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`,
+      'CREATE INDEX IF NOT EXISTS cdn_files_uploader_id_idx ON cdn_files (uploader_id)',
+      `CREATE TABLE IF NOT EXISTS cdn_migrations (
+        name TEXT PRIMARY KEY,
+        cursor TEXT,
+        lease_until INTEGER,
+        completed_at TEXT
+      )`,
+    ].map((statement) => db.prepare(statement))
+  );
   const legacyMigrated = await runAvatarMigration(env, {
     name: 'avatars-v1',
     prefix: 'users/',

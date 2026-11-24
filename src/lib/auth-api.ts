@@ -1,16 +1,47 @@
 import { z } from 'zod';
-import {
-  githubRepositorySchema,
-  githubUserSchema,
-  type AuthSession,
-  type GitHubRepository,
-  type GitHubUser,
-  type SessionDeviceSource,
-} from '@karasu-lab/types/shared';
 import { signRequest } from '@karasu-lab/utils/server';
 import { vercelProtectionBypassHeaders } from '@karasu-lab/utils/server/vercel-bypass';
 
-const githubRepositoriesSchema = z.array(githubRepositorySchema);
+export interface AuthSession {
+  id: string;
+  userId: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt: string;
+}
+
+interface SessionDeviceSource {
+  sessionId: string;
+  userId: string;
+  source: string;
+}
+
+const githubUserSchema = z.object({
+  id: z.number(),
+  login: z.string(),
+  name: z.string().nullable(),
+  email: z.string().nullable(),
+  avatarUrl: z.string(),
+  htmlUrl: z.string(),
+});
+
+const githubRepositoriesSchema = z.array(
+  z.object({
+    id: z.number(),
+    name: z.string(),
+    fullName: z.string(),
+    private: z.boolean(),
+    htmlUrl: z.string(),
+    description: z.string().nullable(),
+    language: z.string().nullable(),
+    updatedAt: z.string(),
+  })
+);
+
+type GitHubUser = z.infer<typeof githubUserSchema>;
+type GitHubRepository = z.infer<typeof githubRepositoriesSchema>[number];
 
 function signedAuthApiFetch(env: Env, path: string, method: string): Promise<Response> {
   const url = `${env.AUTH_URL}${path}`;

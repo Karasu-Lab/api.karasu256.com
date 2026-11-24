@@ -1,19 +1,44 @@
-import type { CdnFile, CdnFileRow, InspectedObject } from '@karasu-lab/types/server';
-import { ALLOWED_TYPES, MAX_FILE_BYTES } from './images';
+export interface CdnFile {
+  path: string;
+  sha256: string;
+  contentType: string;
+  size: number;
+  uploaderId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
-export type { CdnFile, CdnFileRow, InspectedObject };
+export interface CdnFileRow {
+  path: string;
+  sha256: string;
+  content_type: string;
+  size: number;
+  uploader_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
-const MAX_PATH_LENGTH = 1024;
-const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
+export interface InspectedObject {
+  sha256: string;
+  size: number;
+  contentType: string;
+  body: ArrayBuffer;
+  httpMetadata: { contentType?: string } | undefined;
+}
 
 export function isSafePath(path: string): boolean {
-  if (!path || path.length > MAX_PATH_LENGTH) return false;
-  if (path.startsWith('/') || CONTROL_CHARACTERS.test(path)) return false;
+  if (!path || path.length > 1024) return false;
+  if (path.startsWith('/') || /[\u0000-\u001f\u007f]/.test(path)) return false;
   return !path.split('/').includes('..');
 }
 
-export function isAllowedUpload(contentType: string, size: number): boolean {
-  return ALLOWED_TYPES.has(contentType) && Number.isInteger(size) && size > 0 && size <= MAX_FILE_BYTES;
+export function isAllowedUpload(
+  contentType: string,
+  size: number,
+  allowedTypes: readonly string[] = ['image/jpeg', 'image/png', 'image/webp'],
+  maxBytes: number = 5 * 1024 * 1024
+): boolean {
+  return allowedTypes.includes(contentType) && Number.isInteger(size) && size > 0 && size <= maxBytes;
 }
 
 export function cdnUrl(env: Env, path: string): string {

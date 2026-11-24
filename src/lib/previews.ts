@@ -1,5 +1,5 @@
-import { status } from 'elysia';
 import { z } from 'zod';
+import { BadGatewayError, ForbiddenError, ServiceUnavailableError } from './errors';
 
 const accountsSchema = z.object({ result: z.array(z.object({ id: z.string() })) });
 const workerSchema = z.object({ result: z.object({ id: z.string(), name: z.string() }) });
@@ -21,9 +21,10 @@ export function branchSlug(branch: string): string {
 
 async function cloudflare<T>(token: string, path: string, schema: z.ZodType<T>): Promise<T> {
   const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, { headers: { Authorization: `Bearer ${token}` } });
-  if (!res.ok) throw status(res.status === 401 || res.status === 403 ? 403 : 502, 'cloudflare_unavailable');
+  if (res.status === 401 || res.status === 403) throw new ForbiddenError('cloudflare_forbidden');
+  if (!res.ok) throw new BadGatewayError('cloudflare_unavailable');
   const parsed = schema.safeParse(await res.json());
-  if (!parsed.success) throw status(502, 'cloudflare_unexpected_response');
+  if (!parsed.success) throw new BadGatewayError('cloudflare_unexpected_response');
   return parsed.data;
 }
 
@@ -33,9 +34,9 @@ async function listBranches(token: string): Promise<string[]> {
     const res = await fetch(`https://api.github.com/repos/Karasu-Lab/api-auth.karasu256.com/branches?per_page=100&page=${page}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'api.karasu256.com' },
     });
-    if (!res.ok) throw status(502, 'github_unavailable');
+    if (!res.ok) throw new BadGatewayError('github_unavailable');
     const parsed = branchesSchema.safeParse(await res.json());
-    if (!parsed.success) throw status(502, 'github_unexpected_response');
+    if (!parsed.success) throw new BadGatewayError('github_unexpected_response');
     branches.push(...parsed.data.map((branch) => branch.name));
     if (parsed.data.length < 100) return branches;
   }
@@ -47,11 +48,11 @@ function previewSlug(url: string): string {
 
 export async function listPreviews(env: Env, workerId: string): Promise<Record<string, Preview>> {
   const token = env.CF_TOKEN;
-  if (!token) throw status(503, 'cf_api_token_not_configured');
+  if (!token) throw new ServiceUnavailableError('cf_api_token_not_configured');
 
   const accounts = await cloudflare(token, '/accounts', accountsSchema);
   const accountId = accounts.result[0]?.id;
-  if (!accountId) throw status(403, 'cloudflare_account_not_found');
+  if (!accountId) throw new ForbiddenError('cloudflare_account_not_found');
   const worker = await cloudflare(token, `/accounts/${accountId}/workers/workers/${workerId}`, workerSchema);
   const versions = await cloudflare(token, `/accounts/${accountId}/workers/scripts/${worker.result.name}/versions`, versionsSchema);
 

@@ -1,7 +1,8 @@
-import { Elysia, status } from 'elysia';
+import { Elysia } from 'elysia';
 import { z } from 'zod';
 import { avatarPath, signedAvatarUploadUrl } from '../../../../../lib/avatars';
 import { parseRawJson, requireInternalUser } from '../../../../../lib/guards';
+import { UnsupportedMediaTypeError } from '../../../../../lib/errors';
 
 const avatarUploadUrlBodySchema = z.object({ contentType: z.string().min(1) });
 
@@ -12,7 +13,7 @@ export const internalUserAvatarUploadUrlPost = (env: Env) =>
     .post('/internal/users/:userId/avatar-upload-url', async ({ params, body, request }) => {
       const parsed = avatarUploadUrlBodySchema.safeParse(body);
       if (!parsed.success) throw parsed.error;
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(parsed.data.contentType)) throw status(415, 'unsupported_media_type');
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(parsed.data.contentType)) throw new UnsupportedMediaTypeError();
       const path = avatarPath(params.userId, 'default');
       const sessionJwt = request.headers.get('authorization')?.slice('Bearer '.length) ?? '';
       return { uploadUrl: await signedAvatarUploadUrl(env, sessionJwt, path), path };

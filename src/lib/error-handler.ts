@@ -1,6 +1,7 @@
-import { Elysia, ElysiaCustomStatusResponse, ValidationError } from 'elysia';
+import { Elysia, ValidationError } from 'elysia';
 import { JOSEError } from 'jose/errors';
 import { z } from 'zod';
+import { HttpError } from './errors';
 
 type ErrorLocation = 'body' | 'query' | 'params' | 'headers' | 'cookie' | 'response' | 'unknown';
 
@@ -34,9 +35,9 @@ export const errorHandler = () =>
     const { method } = request;
     const { pathname } = new URL(request.url);
 
-    if (error instanceof ElysiaCustomStatusResponse) {
-      set.status = error.code;
-      return { error: error.response };
+    if (error instanceof HttpError) {
+      set.status = error.status;
+      return { error: error.message };
     }
 
     if (error instanceof z.ZodError) {

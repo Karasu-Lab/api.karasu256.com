@@ -1,7 +1,8 @@
-import { Elysia, status } from 'elysia';
+import { Elysia } from 'elysia';
 import { z } from 'zod';
 import { parsePermissionId, permissionIdWithinOperation } from '@karasu-lab/api-permissions';
 import { verifyApiKey } from '../../../lib/auth';
+import { UnauthorizedError } from '../../../lib/errors';
 
 const verifyBodySchema = z.object({ key: z.string().min(1) });
 
@@ -25,6 +26,6 @@ export const apiKeysVerifyPost = (env: Env) =>
     const parsed = verifyBodySchema.safeParse(body);
     if (!parsed.success) throw parsed.error;
     const verified = await verifyApiKey(parsed.data.key, env);
-    if (!verified) throw status(401, 'Unauthorized');
+    if (!verified) throw new UnauthorizedError();
     return { userId: verified.userId, keyId: verified.keyId, operations: groupByOperation(verified.permissionIds) };
   });

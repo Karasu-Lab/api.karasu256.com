@@ -1,7 +1,8 @@
-import { Elysia, status } from 'elysia';
+import { Elysia } from 'elysia';
 import { z } from 'zod';
 import { cdnUrl, inspectObject, isAllowedUpload, isSafePath, upsertCdnFile } from '../../../lib/cdn-files';
 import { deriveSession, requireSession } from '../../../lib/guards';
+import { UnauthorizedError, UnprocessableEntityError } from '../../../lib/errors';
 
 const uploadVerifyRequestSchema = z.object({
   path: z.string(),
@@ -19,8 +20,8 @@ export const uploadVerifyPost = (env: Env) =>
       const parsed = uploadVerifyRequestSchema.safeParse(body);
       if (!parsed.success) throw parsed.error;
       const data = parsed.data;
-      if (data.uploaderId !== undefined && data.uploaderId !== session!.userId) throw status(401, 'Unauthorized');
-      if (!isSafePath(data.path) || !isAllowedUpload(data.contentType, data.size)) throw status(422, 'invalid_upload');
+      if (data.uploaderId !== undefined && data.uploaderId !== session!.userId) throw new UnauthorizedError();
+      if (!isSafePath(data.path) || !isAllowedUpload(data.contentType, data.size)) throw new UnprocessableEntityError('invalid_upload');
       const object = await inspectObject(env, data.path);
       if (
         !object ||
@@ -28,7 +29,7 @@ export const uploadVerifyPost = (env: Env) =>
         object.contentType !== data.contentType ||
         object.size !== data.size
       ) {
-        throw status(422, 'verification_failed');
+        throw new UnprocessableEntityError('verification_failed');
       }
       await upsertCdnFile(env, {
         path: data.path,

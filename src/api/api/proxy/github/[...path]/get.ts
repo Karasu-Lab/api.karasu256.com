@@ -1,4 +1,5 @@
-import { Elysia, status } from 'elysia';
+import { Elysia } from 'elysia';
+import { NotFoundError } from '../../../../../lib/errors';
 
 
 /**
@@ -19,7 +20,7 @@ import { Elysia, status } from 'elysia';
 export const apiProxyGithubGet = () =>
   new Elysia().get('/api/proxy/github/*', async ({ request, params }) => {
     const path = params['*'];
-    if (!/^[^/]+\/[^/]+\/releases\/(?:latest\/download|download\/[^/]+)\/.+/.test(path)) throw status(404, 'not found');
+    if (!/^[^/]+\/[^/]+\/releases\/(?:latest\/download|download\/[^/]+)\/.+/.test(path)) throw new NotFoundError('not found');
     const upstream = await fetch(`https://github.com/${path}${new URL(request.url).search}`);
     const headers = new Headers();
     for (const name of ['content-type', 'content-length', 'etag', 'last-modified']) {

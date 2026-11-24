@@ -21,10 +21,10 @@ export function branchSlug(branch: string): string {
 
 async function cloudflare<T>(token: string, path: string, schema: z.ZodType<T>): Promise<T> {
   const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, { headers: { Authorization: `Bearer ${token}` } });
-  if (res.status === 401 || res.status === 403) throw new ForbiddenError('cloudflare_forbidden');
-  if (!res.ok) throw new BadGatewayError('cloudflare_unavailable');
+  if (res.status === 401 || res.status === 403) throw new ForbiddenError();
+  if (!res.ok) throw new BadGatewayError();
   const parsed = schema.safeParse(await res.json());
-  if (!parsed.success) throw new BadGatewayError('cloudflare_unexpected_response');
+  if (!parsed.success) throw new BadGatewayError();
   return parsed.data;
 }
 
@@ -34,9 +34,9 @@ async function listBranches(token: string): Promise<string[]> {
     const res = await fetch(`https://api.github.com/repos/Karasu-Lab/api-auth.karasu256.com/branches?per_page=100&page=${page}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'api.karasu256.com' },
     });
-    if (!res.ok) throw new BadGatewayError('github_unavailable');
+    if (!res.ok) throw new BadGatewayError();
     const parsed = branchesSchema.safeParse(await res.json());
-    if (!parsed.success) throw new BadGatewayError('github_unexpected_response');
+    if (!parsed.success) throw new BadGatewayError();
     branches.push(...parsed.data.map((branch) => branch.name));
     if (parsed.data.length < 100) return branches;
   }
@@ -48,12 +48,11 @@ function previewSlug(url: string): string {
 
 export async function listPreviews(env: Env, workerId: string | undefined = env.API_AUTH_WORKER_ID): Promise<Record<string, Preview>> {
   const token = env.CF_TOKEN;
-  if (!token) throw new ServiceUnavailableError('cf_token_not_configured');
-  if (!workerId) throw new ServiceUnavailableError('api_auth_worker_id_not_configured');
+  if (!token || !workerId) throw new ServiceUnavailableError();
 
   const accounts = await cloudflare(token, '/accounts', accountsSchema);
   const accountId = accounts.result[0]?.id;
-  if (!accountId) throw new ForbiddenError('cloudflare_account_not_found');
+  if (!accountId) throw new ForbiddenError();
   const worker = await cloudflare(token, `/accounts/${accountId}/workers/workers/${workerId}`, workerSchema);
   const versions = await cloudflare(token, `/accounts/${accountId}/workers/scripts/${worker.result.name}/versions`, versionsSchema);
 

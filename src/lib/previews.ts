@@ -34,7 +34,7 @@ async function listBranches(token: string): Promise<string[]> {
   }
 }
 
-export async function listPreviews(env: Env, workerId: string | undefined = env.API_AUTH_WORKER_ID): Promise<Record<string, Preview>> {
+export async function listPreviews(env: Env, domain: string, workerId: string | undefined = env.API_AUTH_WORKER_ID): Promise<Record<string, Preview>> {
   const { CF_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: accountId } = env;
   const missing = Object.entries({ CF_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: accountId, API_AUTH_WORKER_ID: workerId })
     .filter(([, value]) => !value)
@@ -59,7 +59,7 @@ export async function listPreviews(env: Env, workerId: string | undefined = env.
       const deployedAt = deployedByName.get(branch)?.deployed_on;
       return [
         branch,
-        { url: `https://${deployedByName.get(branch)?.slug ?? branchSlug(branch)}.dev-api-auth.karasu256.com`, ...(deployedAt ? { deployedAt } : {}) },
+        { url: `https://${deployedByName.get(branch)?.slug ?? branchSlug(branch)}.${domain}`, ...(deployedAt ? { deployedAt } : {}) },
       ];
     })
   );

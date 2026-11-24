@@ -46,7 +46,7 @@ function previewSlug(url: string): string {
 }
 
 export async function listPreviews(env: Env, workerId: string): Promise<Record<string, Preview>> {
-  const token = env.CF_API_TOKEN;
+  const token = env.CF_TOKEN;
   if (!token) throw status(503, 'cf_api_token_not_configured');
 
   const accounts = await cloudflare(token, '/accounts', accountsSchema);

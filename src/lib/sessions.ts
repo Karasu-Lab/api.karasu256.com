@@ -1,8 +1,7 @@
-import type { AuthSession, SessionSource } from '@karasu-lab/types/shared';
-import { deleteAuthSession, fetchAuthSessions, fetchSessionDeviceSources } from './auth-api';
+import { deleteAuthSession, fetchAuthSessions, fetchSessionDeviceSources, type AuthSession } from './auth-api';
 
 export interface CombinedSession extends AuthSession {
-  source: SessionSource | null;
+  source: string | null;
 }
 
 export async function listActiveSessions(env: Env, userId: string, sessionId?: string): Promise<CombinedSession[]> {

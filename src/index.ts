@@ -4,33 +4,69 @@ import { env as cfEnv } from 'cloudflare:workers';
 import { resolveEnv } from './constants';
 import { errorHandler } from './lib/error-handler';
 import { runStartupMigrations } from './lib/startup-migration';
-import { apiKeyRoutes } from './routes/api-keys';
-import { assetLinkRoutes } from './routes/asset-links';
-import { avatarRoutes } from './routes/avatars';
-import { internalRoutes } from './routes/internal';
-import { metaRoutes } from './routes/meta';
-import { githubProxyRoutes } from './routes/github-proxy';
-import { githubRoutes } from './routes/github';
-import { mojangProxyRoutes } from './routes/mojang-proxy';
-import { permissionRoutes } from './routes/permissions';
-import { uploadRoutes } from './routes/upload';
-import { userRoutes } from './routes/user';
+import { operationPermissionsGet } from './api/[operation]/permissions/get';
+import { apiApiAuthPreviewsGet } from './api/api/api-auth/previews/get';
+import { apiProxyGithubGet } from './api/api/proxy/github/[...path]/get';
+import { apiProxyMojangGet } from './api/api/proxy/mojang/[...path]/get';
+import { apiKeysVerifyPost } from './api/api-keys/verify/post';
+import { assetLinksGet } from './api/asset-links/get';
+import { githubAvatarGet } from './api/github/avatar/get';
+import { githubRepositoriesGet } from './api/github/repositories/get';
+import { githubUserGet } from './api/github/user/get';
+import { internalApiKeyPermissionsGet } from './api/internal/api-keys/permissions/get';
+import { internalApiKeyPermissionsPut } from './api/internal/api-keys/[id]/permissions/put';
+import { internalAvatarProviderPost } from './api/internal/avatars/users/[userId]/providers/[providerId]/post';
+import { internalUserAvatarUploadUrlPost } from './api/internal/users/[userId]/avatar-upload-url/post';
+import { internalUserFirebasePhotoPost } from './api/internal/users/[userId]/firebase-photo/post';
+import { internalUserFirebaseUidGet } from './api/internal/users/[userId]/firebase-uid/get';
+import { internalUserImagePost } from './api/internal/users/[userId]/image/post';
+import { internalUserLinkedProvidersGet } from './api/internal/users/[userId]/linked-providers/get';
+import { internalUserLinkedProviderDelete } from './api/internal/users/[userId]/linked-providers/[providerId]/delete';
+import { internalUserSessionsGet } from './api/internal/users/[userId]/sessions/get';
+import { internalUserSessionDelete } from './api/internal/users/[userId]/sessions/[sessionId]/delete';
+import { metaGet } from './api/meta/get';
+import { permissionsGet } from './api/permissions/get';
+import { permissionScopesGet } from './api/permissions/scopes/get';
+import { uploadVerifyGet } from './api/upload/verify/get';
+import { uploadVerifyPost } from './api/upload/verify/post';
+import { userProfileGet } from './api/user/profile/get';
+import { userProfilePatch } from './api/user/profile/patch';
+import { userProfileImageGet } from './api/user/profile/image/get';
+import { userProfileImagePost } from './api/user/profile/image/post';
 
 const env = resolveEnv(cfEnv as Env);
 
 const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typebox' })
   .use(errorHandler())
-  .use(userRoutes(env))
-  .use(githubRoutes(env))
-  .use(avatarRoutes(env))
-  .use(internalRoutes(env))
-  .use(permissionRoutes(env))
-  .use(apiKeyRoutes(env))
-  .use(uploadRoutes(env))
-  .use(metaRoutes(env))
-  .use(assetLinkRoutes())
-  .use(mojangProxyRoutes())
-  .use(githubProxyRoutes());
+  .use(userProfileGet(env))
+  .use(userProfilePatch(env))
+  .use(userProfileImageGet(env))
+  .use(userProfileImagePost(env))
+  .use(githubUserGet(env))
+  .use(githubAvatarGet(env))
+  .use(githubRepositoriesGet(env))
+  .use(internalAvatarProviderPost(env))
+  .use(internalUserLinkedProvidersGet(env))
+  .use(internalUserLinkedProviderDelete(env))
+  .use(internalUserSessionsGet(env))
+  .use(internalUserSessionDelete(env))
+  .use(internalUserFirebaseUidGet(env))
+  .use(internalUserImagePost(env))
+  .use(internalUserAvatarUploadUrlPost(env))
+  .use(internalUserFirebasePhotoPost(env))
+  .use(permissionsGet(env))
+  .use(permissionScopesGet(env))
+  .use(operationPermissionsGet(env))
+  .use(internalApiKeyPermissionsPut(env))
+  .use(internalApiKeyPermissionsGet(env))
+  .use(apiKeysVerifyPost(env))
+  .use(uploadVerifyPost(env))
+  .use(uploadVerifyGet(env))
+  .use(metaGet(env))
+  .use(assetLinksGet())
+  .use(apiProxyMojangGet())
+  .use(apiProxyGithubGet())
+  .use(apiApiAuthPreviewsGet(env));
 
 function normalizePath(request: Request): Request {
   const url = new URL(request.url);

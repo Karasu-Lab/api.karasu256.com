@@ -1,4 +1,4 @@
-import { Elysia, ValidationError } from 'elysia';
+import { Elysia, ElysiaCustomStatusResponse, ValidationError } from 'elysia';
 import { JOSEError } from 'jose/errors';
 import { z } from 'zod';
 
@@ -33,6 +33,11 @@ export const errorHandler = () =>
   new Elysia({ name: 'error-handler' }).onError({ as: 'global' }, ({ code, error, request, set }) => {
     const { method } = request;
     const { pathname } = new URL(request.url);
+
+    if (error instanceof ElysiaCustomStatusResponse) {
+      set.status = error.code;
+      return { error: error.response };
+    }
 
     if (error instanceof z.ZodError) {
       console.error(JSON.stringify({ level: 'error', kind: 'validation', method, pathname, issues: formatIssues('unknown', error) }));

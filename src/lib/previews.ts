@@ -5,6 +5,8 @@ const previewsSchema = z.object({
   result: z.array(z.object({ name: z.string(), slug: z.string(), deployed_on: z.string().nullable().optional() })),
 });
 const branchesSchema = z.array(z.object({ name: z.string() }));
+const cloudflareErrorSchema = z.object({ errors: z.array(z.object({ message: z.string() })) });
+const githubErrorSchema = z.object({ message: z.string() });
 
 export interface Preview {
   url: string;
@@ -21,7 +23,10 @@ async function listBranches(token: string): Promise<string[]> {
     const res = await fetch(`https://api.github.com/repos/Karasu-Lab/api-auth.karasu256.com/branches?per_page=100&page=${page}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'api.karasu256.com' },
     });
-    if (!res.ok) throw new BadGatewayError(undefined, `GitHub responded ${res.status}: ${await res.text()}`);
+    if (!res.ok) {
+      const body = githubErrorSchema.safeParse(await res.json().catch(() => null));
+      throw new BadGatewayError(undefined, `GitHub responded ${res.status}${body.success ? `: ${body.data.message}` : ''}`);
+    }
     const parsed = branchesSchema.safeParse(await res.json());
     if (!parsed.success) throw new BadGatewayError(undefined, 'GitHub returned a branch list in an unexpected shape');
     branches.push(...parsed.data.map((branch) => branch.name));
@@ -40,7 +45,8 @@ export async function listPreviews(env: Env, workerId: string | undefined = env.
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
-    const reason = `Cloudflare responded ${res.status}: ${await res.text()}`;
+    const body = cloudflareErrorSchema.safeParse(await res.json().catch(() => null));
+    const reason = `Cloudflare responded ${res.status}${body.success ? `: ${body.data.errors.map((error) => error.message).join(', ')}` : ''}`;
     throw res.status === 401 || res.status === 403 ? new ForbiddenError(undefined, reason) : new BadGatewayError(undefined, reason);
   }
   const parsed = previewsSchema.safeParse(await res.json());

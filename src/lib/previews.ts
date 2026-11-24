@@ -46,9 +46,10 @@ function previewSlug(url: string): string {
   return new URL(url).hostname.split('.')[0]!;
 }
 
-export async function listPreviews(env: Env, workerId: string): Promise<Record<string, Preview>> {
+export async function listPreviews(env: Env, workerId: string | undefined = env.API_AUTH_WORKER_ID): Promise<Record<string, Preview>> {
   const token = env.CF_TOKEN;
-  if (!token) throw new ServiceUnavailableError('cf_api_token_not_configured');
+  if (!token) throw new ServiceUnavailableError('cf_token_not_configured');
+  if (!workerId) throw new ServiceUnavailableError('api_auth_worker_id_not_configured');
 
   const accounts = await cloudflare(token, '/accounts', accountsSchema);
   const accountId = accounts.result[0]?.id;

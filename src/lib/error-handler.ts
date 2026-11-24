@@ -37,7 +37,7 @@ export const errorHandler = () =>
 
     if (error instanceof HttpError) {
       set.status = error.status;
-      return { error: error.message };
+      return { error: error.message, ...(error.reason ? { reason: error.reason } : {}) };
     }
 
     if (error instanceof z.ZodError) {

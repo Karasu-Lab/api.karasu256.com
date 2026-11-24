@@ -21,9 +21,9 @@ async function listBranches(token: string): Promise<string[]> {
     const res = await fetch(`https://api.github.com/repos/Karasu-Lab/api-auth.karasu256.com/branches?per_page=100&page=${page}`, {
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'api.karasu256.com' },
     });
-    if (!res.ok) throw new BadGatewayError();
+    if (!res.ok) throw new BadGatewayError(undefined, `GitHub responded ${res.status}: ${await res.text()}`);
     const parsed = branchesSchema.safeParse(await res.json());
-    if (!parsed.success) throw new BadGatewayError();
+    if (!parsed.success) throw new BadGatewayError(undefined, 'GitHub returned a branch list in an unexpected shape');
     branches.push(...parsed.data.map((branch) => branch.name));
     if (parsed.data.length < 100) return branches;
   }
@@ -31,15 +31,20 @@ async function listBranches(token: string): Promise<string[]> {
 
 export async function listPreviews(env: Env, workerId: string | undefined = env.API_AUTH_WORKER_ID): Promise<Record<string, Preview>> {
   const { CF_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: accountId } = env;
-  if (!token || !accountId || !workerId) throw new ServiceUnavailableError();
+  const missing = Object.entries({ CF_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: accountId, API_AUTH_WORKER_ID: workerId })
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+  if (missing.length) throw new ServiceUnavailableError(undefined, `${missing.join(', ')} not configured`);
 
   const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/workers/${workerId}/previews?per_page=100`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (res.status === 401 || res.status === 403) throw new ForbiddenError();
-  if (!res.ok) throw new BadGatewayError();
+  if (!res.ok) {
+    const reason = `Cloudflare responded ${res.status}: ${await res.text()}`;
+    throw res.status === 401 || res.status === 403 ? new ForbiddenError(undefined, reason) : new BadGatewayError(undefined, reason);
+  }
   const parsed = previewsSchema.safeParse(await res.json());
-  if (!parsed.success) throw new BadGatewayError();
+  if (!parsed.success) throw new BadGatewayError(undefined, 'Cloudflare returned a preview list in an unexpected shape');
 
   const deployedByName = new Map(parsed.data.result.map((preview) => [preview.name, preview]));
   const branches = env.GH_TOKEN ? await listBranches(env.GH_TOKEN) : [...deployedByName.keys()];

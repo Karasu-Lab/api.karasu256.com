@@ -12,6 +12,7 @@ declare global {
     GH_TOKEN?: string;
     CF_TOKEN?: string;
     API_AUTH_WORKER_ID?: string;
+    CLOUDFLARE_ACCOUNT_ID?: string;
     FIREBASE_ADMIN_PROJECT_ID: string;
     FIREBASE_ADMIN_CLIENT_EMAIL: string;
     FIREBASE_ADMIN_PRIVATE_KEY: string;

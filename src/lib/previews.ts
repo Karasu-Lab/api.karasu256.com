@@ -1,12 +1,8 @@
 import { z } from 'zod';
 import { BadGatewayError, ForbiddenError, ServiceUnavailableError } from './errors';
 
-const accountsSchema = z.object({ result: z.array(z.object({ id: z.string() })) });
-const workerSchema = z.object({ result: z.object({ id: z.string(), name: z.string() }) });
-const versionsSchema = z.object({
-  result: z.object({
-    items: z.array(z.object({ urls: z.array(z.string()).optional(), metadata: z.object({ created_on: z.string() }).optional() })),
-  }),
+const previewsSchema = z.object({
+  result: z.array(z.object({ name: z.string(), slug: z.string(), deployed_on: z.string().nullable().optional() })),
 });
 const branchesSchema = z.array(z.object({ name: z.string() }));
 
@@ -17,15 +13,6 @@ export interface Preview {
 
 export function branchSlug(branch: string): string {
   return branch.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-}
-
-async function cloudflare<T>(token: string, path: string, schema: z.ZodType<T>): Promise<T> {
-  const res = await fetch(`https://api.cloudflare.com/client/v4${path}`, { headers: { Authorization: `Bearer ${token}` } });
-  if (res.status === 401 || res.status === 403) throw new ForbiddenError();
-  if (!res.ok) throw new BadGatewayError();
-  const parsed = schema.safeParse(await res.json());
-  if (!parsed.success) throw new BadGatewayError();
-  return parsed.data;
 }
 
 async function listBranches(token: string): Promise<string[]> {
@@ -42,37 +29,27 @@ async function listBranches(token: string): Promise<string[]> {
   }
 }
 
-function previewSlug(url: string): string {
-  return new URL(url).hostname.split('.')[0]!;
-}
-
 export async function listPreviews(env: Env, workerId: string | undefined = env.API_AUTH_WORKER_ID): Promise<Record<string, Preview>> {
-  const token = env.CF_TOKEN;
-  if (!token || !workerId) throw new ServiceUnavailableError();
+  const { CF_TOKEN: token, CLOUDFLARE_ACCOUNT_ID: accountId } = env;
+  if (!token || !accountId || !workerId) throw new ServiceUnavailableError();
 
-  const accounts = await cloudflare(token, '/accounts', accountsSchema);
-  const accountId = accounts.result[0]?.id;
-  if (!accountId) throw new ForbiddenError();
-  const worker = await cloudflare(token, `/accounts/${accountId}/workers/workers/${workerId}`, workerSchema);
-  const versions = await cloudflare(token, `/accounts/${accountId}/workers/scripts/${worker.result.name}/versions`, versionsSchema);
+  const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/workers/${workerId}/previews?per_page=100`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401 || res.status === 403) throw new ForbiddenError();
+  if (!res.ok) throw new BadGatewayError();
+  const parsed = previewsSchema.safeParse(await res.json());
+  if (!parsed.success) throw new BadGatewayError();
 
-  const deployedBySlug = new Map<string, string>();
-  for (const version of versions.result.items) {
-    const createdOn = version.metadata?.created_on;
-    if (!createdOn) continue;
-    for (const url of version.urls ?? []) {
-      const slug = previewSlug(url);
-      const current = deployedBySlug.get(slug);
-      if (!current || current < createdOn) deployedBySlug.set(slug, createdOn);
-    }
-  }
-
-  const branches = env.GH_TOKEN ? await listBranches(env.GH_TOKEN) : [...deployedBySlug.keys()];
+  const deployedByName = new Map(parsed.data.result.map((preview) => [preview.name, preview]));
+  const branches = env.GH_TOKEN ? await listBranches(env.GH_TOKEN) : [...deployedByName.keys()];
   return Object.fromEntries(
     branches.map((branch) => {
-      const slug = branchSlug(branch);
-      const deployedAt = deployedBySlug.get(slug);
-      return [branch, { url: `https://${slug}.dev-api-auth.karasu256.com`, ...(deployedAt ? { deployedAt } : {}) }];
+      const deployedAt = deployedByName.get(branch)?.deployed_on;
+      return [
+        branch,
+        { url: `https://${deployedByName.get(branch)?.slug ?? branchSlug(branch)}.dev-api-auth.karasu256.com`, ...(deployedAt ? { deployedAt } : {}) },
+      ];
     })
   );
 }

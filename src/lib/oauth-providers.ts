@@ -108,7 +108,7 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
   },
 ];
 
-const socialProvidersSchema = z.object({ providerIds: z.array(z.string()) });
+const providerIdsSchema = z.object({ providerIds: z.array(z.string()) });
 
 export interface OAuthProvider {
   id: string;
@@ -129,8 +129,8 @@ export function renderOAuthProviderSvg(providerId: string): string | null {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${provider.viewBox}" role="img" aria-label="${provider.label}"><path fill="currentColor" d="${provider.path}"/></svg>`;
 }
 
-async function fetchSocialProviderIds(env: Env): Promise<string[]> {
-  const url = `${env.AUTH_URL}/api/internal/social-providers`;
+async function fetchProviderIds(env: Env): Promise<string[]> {
+  const url = `${env.AUTH_URL}/api/internal/providers`;
   const res = await fetch(url, {
     headers: {
       ...signRequest({ secret: env.INTERNAL_API_SECRET, method: 'GET', url, body: '' }),
@@ -138,18 +138,14 @@ async function fetchSocialProviderIds(env: Env): Promise<string[]> {
     },
   });
   if (!res.ok) throw new BadGatewayError(undefined, `api-auth.karasu256.com responded ${res.status} for ${url}`);
-  const parsed = socialProvidersSchema.safeParse(await res.json());
-  if (!parsed.success) throw new BadGatewayError(undefined, 'api-auth.karasu256.com returned the social providers in an unexpected shape');
+  const parsed = providerIdsSchema.safeParse(await res.json());
+  if (!parsed.success) throw new BadGatewayError(undefined, 'api-auth.karasu256.com returned the providers in an unexpected shape');
   return parsed.data.providerIds;
 }
 
 export async function listOAuthProviders(env: Env, origin: string, usage?: OAuthProviderUsage): Promise<OAuthProvider[]> {
-  const socialProviderIds = new Set(await fetchSocialProviderIds(env));
-  const available = (definition: OAuthProviderDefinition) => {
-    if (usage && !definition[usage]) return false;
-    if (definition.kind === 'social') return socialProviderIds.has(definition.id);
-    return definition.id === 'xbox' ? socialProviderIds.has('microsoft') : true;
-  };
+  const providerIds = new Set(await fetchProviderIds(env));
+  const available = (definition: OAuthProviderDefinition) => providerIds.has(definition.id) && (!usage || definition[usage]);
   return oauthProviderDefinitions.filter(available).map(({ id, label, kind, signIn, link, backgroundColor, foregroundColor }) => ({
     id,
     label,

@@ -9,6 +9,8 @@ interface OAuthProviderDefinition {
   id: string;
   label: string;
   kind: OAuthProviderKind;
+  signIn: boolean;
+  link: boolean;
   backgroundColor: { default: string; dark: string };
   foregroundColor: { default: string; dark: string };
   viewBox: string;
@@ -20,6 +22,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'google',
     label: 'Google',
     kind: 'social',
+    signIn: true,
+    link: true,
     backgroundColor: { default: '#f2f2f2', dark: '#ffffff' },
     foregroundColor: { default: '#1f1f1f', dark: '#1f1f1f' },
     viewBox: '0 0 512 512',
@@ -29,6 +33,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'github',
     label: 'GitHub',
     kind: 'social',
+    signIn: true,
+    link: true,
     backgroundColor: { default: '#24292f', dark: '#24292f' },
     foregroundColor: { default: '#ffffff', dark: '#ffffff' },
     viewBox: '0 0 512 512',
@@ -38,6 +44,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'microsoft',
     label: 'Microsoft',
     kind: 'social',
+    signIn: true,
+    link: true,
     backgroundColor: { default: '#00adef', dark: '#00adef' },
     foregroundColor: { default: '#ffffff', dark: '#ffffff' },
     viewBox: '0 0 448 512',
@@ -47,6 +55,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'twitter',
     label: 'X',
     kind: 'social',
+    signIn: true,
+    link: true,
     backgroundColor: { default: '#000000', dark: '#000000' },
     foregroundColor: { default: '#ffffff', dark: '#ffffff' },
     viewBox: '0 0 448 512',
@@ -56,6 +66,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'discord',
     label: 'Discord',
     kind: 'social',
+    signIn: true,
+    link: true,
     backgroundColor: { default: '#5865f2', dark: '#5865f2' },
     foregroundColor: { default: '#ffffff', dark: '#ffffff' },
     viewBox: '0 0 576 512',
@@ -65,6 +77,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'xbox',
     label: 'Xbox',
     kind: 'derived',
+    signIn: false,
+    link: true,
     backgroundColor: { default: '#107c10', dark: '#107c10' },
     foregroundColor: { default: '#ffffff', dark: '#ffffff' },
     viewBox: '0 0 512 512',
@@ -74,6 +88,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'minecraft',
     label: 'Minecraft',
     kind: 'derived',
+    signIn: false,
+    link: true,
     backgroundColor: { default: '#6a9c3f', dark: '#6a9c3f' },
     foregroundColor: { default: '#ffffff', dark: '#ffffff' },
     viewBox: '0 0 512 512',
@@ -83,6 +99,8 @@ const oauthProviderDefinitions: OAuthProviderDefinition[] = [
     id: 'passkey',
     label: 'Passkey',
     kind: 'passkey',
+    signIn: true,
+    link: false,
     backgroundColor: { default: '#f2f2f2', dark: '#27272a' },
     foregroundColor: { default: '#1f1f1f', dark: '#ffffff' },
     viewBox: '0 0 512 512',
@@ -96,10 +114,14 @@ export interface OAuthProvider {
   id: string;
   label: string;
   kind: OAuthProviderKind;
+  signIn: boolean;
+  link: boolean;
   backgroundColor: { default: string; dark: string };
   foregroundColor: { default: string; dark: string };
   iconUrl: string;
 }
+
+export type OAuthProviderUsage = 'signIn' | 'link';
 
 export function renderOAuthProviderSvg(providerId: string): string | null {
   const provider = oauthProviderDefinitions.find((definition) => definition.id === providerId);
@@ -121,21 +143,19 @@ async function fetchSocialProviderIds(env: Env): Promise<string[]> {
   return parsed.data.providerIds;
 }
 
-export async function listOAuthProviders(
-  env: Env,
-  origin: string,
-  kinds: OAuthProviderKind[] = ['social', 'derived']
-): Promise<OAuthProvider[]> {
+export async function listOAuthProviders(env: Env, origin: string, usage?: OAuthProviderUsage): Promise<OAuthProvider[]> {
   const socialProviderIds = new Set(await fetchSocialProviderIds(env));
   const available = (definition: OAuthProviderDefinition) => {
-    if (!kinds.includes(definition.kind)) return false;
+    if (usage && !definition[usage]) return false;
     if (definition.kind === 'social') return socialProviderIds.has(definition.id);
     return definition.id === 'xbox' ? socialProviderIds.has('microsoft') : true;
   };
-  return oauthProviderDefinitions.filter(available).map(({ id, label, kind, backgroundColor, foregroundColor }) => ({
+  return oauthProviderDefinitions.filter(available).map(({ id, label, kind, signIn, link, backgroundColor, foregroundColor }) => ({
     id,
     label,
     kind,
+    signIn,
+    link,
     backgroundColor,
     foregroundColor,
     iconUrl: `${origin}/api/assets/oauth/providers/${id}`,

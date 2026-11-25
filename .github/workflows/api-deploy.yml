@@ -88,11 +88,11 @@ jobs:
       FIREBASE_ADMIN_PRIVATE_KEY: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
       GH_TOKEN: ${{ vars.GH_TOKEN }}
       CF_TOKEN: ${{ secrets.CF_TOKEN }}
+      CLOUDFLARE_ENV: dev
     steps:
       - name: Deploy the worker
         uses: Karasu-Lab/WorkersDeploy@v2.0.1
         with:
-          mode: preview
-          worker-name: api-karasu256-com
+          mode: production
+          worker-name: dev-api-karasu256-com
           secret-names: ${{ needs.names.outputs.secret-names }}
-          preview-args: --var GIT_BRANCH:{branch}

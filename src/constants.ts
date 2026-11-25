@@ -12,5 +12,10 @@ const envSchema = z.object({
 });
 
 export function resolveEnv(raw: Env): Env {
-  return { ...raw, ...envSchema.parse(raw) };
+  const parsed = envSchema.safeParse(raw);
+  if (!parsed.success) {
+    console.error(parsed.error.issues);
+    throw parsed.error;
+  }
+  return { ...raw, ...parsed.data };
 }

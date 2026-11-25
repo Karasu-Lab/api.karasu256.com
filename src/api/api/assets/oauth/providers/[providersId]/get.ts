@@ -3,8 +3,8 @@ import { NotFoundError } from '../../../../../../lib/errors';
 import { renderOAuthProviderSvg } from '../../../../../../lib/oauth-providers';
 
 export const apiAssetsOauthProvidersGet = () =>
-  new Elysia().get('/api/assets/oauth/providers/:providersId', ({ params, query }) => {
-    const svg = renderOAuthProviderSvg(params.providersId, typeof query.color === 'string' ? query.color : undefined);
+  new Elysia().get('/api/assets/oauth/providers/:providersId', ({ params }) => {
+    const svg = renderOAuthProviderSvg(params.providersId);
     if (!svg) throw new NotFoundError();
     return new Response(svg, {
       headers: {

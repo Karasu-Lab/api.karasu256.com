@@ -14,8 +14,7 @@ const envSchema = z.object({
 export function resolveEnv(raw: Env): Env {
   const parsed = envSchema.safeParse(raw);
   if (!parsed.success) {
-    console.error(parsed.error.issues);
-    throw parsed.error;
+    throw new Error(z.prettifyError(parsed.error), { cause: parsed.error });
   }
   return { ...raw, ...parsed.data };
 }

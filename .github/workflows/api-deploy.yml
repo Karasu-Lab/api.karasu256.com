@@ -38,7 +38,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
         run: npx --yes wrangler@4 d1 migrations apply CDN_DB --remote
       - name: Deploy the worker
-        uses: Karasu-Lab/WorkersDeploy@v1
+        uses: Karasu-Lab/WorkersDeploy@v1.0.11
         with:
           mode: production
           worker-name: api-karasu256-com
@@ -67,7 +67,7 @@ jobs:
       CF_TOKEN: ${{ secrets.CF_TOKEN }}
     steps:
       - name: Deploy the worker
-        uses: Karasu-Lab/WorkersDeploy@v1
+        uses: Karasu-Lab/WorkersDeploy@v1.0.11
         with:
           mode: preview
           worker-name: api-karasu256-com

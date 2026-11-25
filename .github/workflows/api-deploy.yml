@@ -15,6 +15,10 @@ jobs:
         id: names
         env:
           NAMES: |
+            APP_ENV
+            GIT_BRANCH
+            AUTH_URL
+            CDN_BASE_URL
             DATABASE_URL
             INTERNAL_API_SECRET
             VERCEL_PROTECTION_BYPASS_SECRET
@@ -66,6 +70,7 @@ jobs:
           mode: production
           worker-name: api-karasu256-com
           secret-names: ${{ needs.names.outputs.secret-names }}
+          vars-json: ${{ toJSON(vars) }}
 
   preview:
     needs: names
@@ -96,3 +101,4 @@ jobs:
           mode: production
           worker-name: dev-api-karasu256-com
           secret-names: ${{ needs.names.outputs.secret-names }}
+          vars-json: ${{ toJSON(vars) }}

@@ -10,10 +10,7 @@
       "invocation_logs": false,
     },
   },
-  "routes": [
-    { "pattern": "api.karasu256.com", "custom_domain": true },
-    { "pattern": "dev-api.karasu256.com", "custom_domain": true, "previews_enabled": true, "enabled": false },
-  ],
+  "routes": [{ "pattern": "api.karasu256.com", "custom_domain": true }],
   "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "cdn" }],
   "d1_databases": [
     {
@@ -23,31 +20,20 @@
       "migrations_dir": "migrations",
     },
   ],
-  "vars": {
-    "APP_ENV": "production",
-    "GIT_BRANCH": "main",
-    "AUTH_URL": "https://api-auth.karasu256.com",
-    "CDN_BASE_URL": "https://cdn.karasu256.com",
-  },
-  "preview_urls": true,
-  "previews": {
-    "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "cdn" }],
-    "d1_databases": [
-      {
-        "binding": "CDN_DB",
-        "database_name": "cdn-db",
-        "database_id": "e93f1613-53f1-4dd5-8fc6-2621e08732b3",
-        "migrations_dir": "migrations",
-      },
-    ],
-    "vars": {
-      "APP_ENV": "preview",
-      "GIT_BRANCH": "preview",
-      "AUTH_URL": "https://dev-api-auth.karasu256.com",
-      "CDN_BASE_URL": "https://dev.cdn.karasu256.com",
-    },
-  },
   "env": {
+    "dev": {
+      "name": "dev-api-karasu256-com",
+      "routes": [{ "pattern": "dev-api.karasu256.com", "custom_domain": true }],
+      "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "cdn" }],
+      "d1_databases": [
+        {
+          "binding": "CDN_DB",
+          "database_name": "cdn-db",
+          "database_id": "e93f1613-53f1-4dd5-8fc6-2621e08732b3",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
     "local": {
       "routes": [],
       "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "api-local" }],

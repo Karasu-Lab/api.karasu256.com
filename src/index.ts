@@ -5,6 +5,8 @@ import { resolveEnv } from './constants';
 import { errorHandler } from './lib/error-handler';
 import { runStartupMigrations } from './lib/startup-migration';
 import { operationPermissionsGet } from './api/[operation]/permissions/get';
+import { apiAssetsOauthProvidersGet } from './api/api/assets/oauth/providers/[providersId]/get';
+import { apiOauthProvidersGet } from './api/api/oauth/providers/get';
 import { apiPreviewsGet } from './api/api/previews/[domain]/get';
 import { apiProxyGithubGet } from './api/api/proxy/github/[...path]/get';
 import { apiProxyMojangGet } from './api/api/proxy/mojang/[...path]/get';
@@ -66,7 +68,9 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(assetLinksGet())
   .use(apiProxyMojangGet())
   .use(apiProxyGithubGet())
-  .use(apiPreviewsGet(env));
+  .use(apiPreviewsGet(env))
+  .use(apiOauthProvidersGet(env))
+  .use(apiAssetsOauthProvidersGet());
 
 function normalizePath(request: Request): Request {
   const url = new URL(request.url);

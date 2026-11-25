@@ -5,12 +5,36 @@ on:
     branches: ["**"]
   workflow_dispatch:
 
-# Deployment itself lives in Karasu-Lab/WorkersDeploy: it deploys this
-# app standalone from this repository, detects the ElysiaJS project,
-# builds it with Vite, and deploys it to Cloudflare Workers.
-
 jobs:
+  names:
+    runs-on: ubuntu-latest
+    outputs:
+      secret-names: ${{ steps.names.outputs.value }}
+    steps:
+      - name: Expand the names passed to the worker
+        id: names
+        env:
+          NAMES: |
+            DATABASE_URL
+            INTERNAL_API_SECRET
+            VERCEL_PROTECTION_BYPASS_SECRET
+            ACCOUNTS_APP_ID
+            ACCOUNTS_APP_PUBLIC_KEY
+            FIREBASE_ADMIN_PROJECT_ID
+            FIREBASE_ADMIN_CLIENT_EMAIL
+            FIREBASE_ADMIN_PRIVATE_KEY
+            GH_TOKEN
+            CF_TOKEN
+            CLOUDFLARE_ACCOUNT_ID
+        run: |
+          {
+            echo 'value<<NAMES'
+            echo "$NAMES"
+            echo 'NAMES'
+          } >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: names
     if: github.ref_name == 'main'
     environment: production
     runs-on: ubuntu-latest
@@ -23,7 +47,6 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
       VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ACCOUNTS_APP_ID: ${{ vars.ACCOUNTS_APP_ID }}
       ACCOUNTS_APP_PUBLIC_KEY: ${{ vars.ACCOUNTS_APP_PUBLIC_KEY }}
       FIREBASE_ADMIN_PROJECT_ID: ${{ vars.GOOGLE_CLOUD_PROJECT_ID }}
@@ -38,13 +61,14 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_D1_API_TOKEN }}
         run: npx --yes wrangler@4 d1 migrations apply CDN_DB --remote
       - name: Deploy the worker
-        uses: Karasu-Lab/WorkersDeploy@v1.0.11
+        uses: Karasu-Lab/WorkersDeploy@v2.0.1
         with:
           mode: production
           worker-name: api-karasu256-com
-          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET ACCOUNTS_APP_ID ACCOUNTS_APP_PUBLIC_KEY FIREBASE_ADMIN_PROJECT_ID FIREBASE_ADMIN_CLIENT_EMAIL FIREBASE_ADMIN_PRIVATE_KEY GH_TOKEN CF_TOKEN CLOUDFLARE_ACCOUNT_ID
+          secret-names: ${{ needs.names.outputs.secret-names }}
 
   preview:
+    needs: names
     if: github.ref_name != 'main'
     environment: preview
     runs-on: ubuntu-latest
@@ -57,7 +81,6 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       INTERNAL_API_SECRET: ${{ secrets.INTERNAL_API_SECRET }}
       VERCEL_PROTECTION_BYPASS_SECRET: ${{ secrets.VERCEL_PROTECTION_BYPASS_SECRET }}
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ACCOUNTS_APP_ID: ${{ vars.ACCOUNTS_APP_ID }}
       ACCOUNTS_APP_PUBLIC_KEY: ${{ vars.ACCOUNTS_APP_PUBLIC_KEY }}
       FIREBASE_ADMIN_PROJECT_ID: ${{ vars.GOOGLE_CLOUD_PROJECT_ID }}
@@ -67,9 +90,9 @@ jobs:
       CF_TOKEN: ${{ secrets.CF_TOKEN }}
     steps:
       - name: Deploy the worker
-        uses: Karasu-Lab/WorkersDeploy@v1.0.11
+        uses: Karasu-Lab/WorkersDeploy@v2.0.1
         with:
           mode: preview
           worker-name: api-karasu256-com
-          secret-names: DATABASE_URL INTERNAL_API_SECRET VERCEL_PROTECTION_BYPASS_SECRET ACCOUNTS_APP_ID ACCOUNTS_APP_PUBLIC_KEY FIREBASE_ADMIN_PROJECT_ID FIREBASE_ADMIN_CLIENT_EMAIL FIREBASE_ADMIN_PRIVATE_KEY GH_TOKEN CF_TOKEN CLOUDFLARE_ACCOUNT_ID
+          secret-names: ${{ needs.names.outputs.secret-names }}
           preview-args: --var GIT_BRANCH:{branch}

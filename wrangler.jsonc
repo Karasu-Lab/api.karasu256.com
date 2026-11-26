@@ -24,15 +24,18 @@
     "dev": {
       "name": "dev-api-karasu256-com",
       "routes": [{ "pattern": "dev-api.karasu256.com", "custom_domain": true }],
-      "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "cdn" }],
+      "r2_buckets": [{ "binding": "CLOUDFLARE_IMAGES", "bucket_name": "dev-cdn" }],
       "d1_databases": [
         {
           "binding": "CDN_DB",
-          "database_name": "cdn-db",
-          "database_id": "e93f1613-53f1-4dd5-8fc6-2621e08732b3",
+          "database_name": "cdn-db-preview",
+          "database_id": "ef96d0db-8ae5-4cd1-9885-6f9442695c59",
           "migrations_dir": "migrations",
         },
       ],
+      "vars": {
+        "CDN_BASE_URL": "https://dev-cdn.karasu256.com",
+      },
     },
     "local": {
       "routes": [],

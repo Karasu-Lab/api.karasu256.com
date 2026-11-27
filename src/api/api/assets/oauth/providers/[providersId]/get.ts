@@ -1,10 +1,10 @@
 import { Elysia } from 'elysia';
 import { NotFoundError } from '../../../../../../lib/errors';
-import { renderOAuthProviderSvg } from '../../../../../../lib/oauth-providers';
+import { OAuthProviderCatalog } from '../../../../../../lib/oauth-providers';
 
 export const apiAssetsOauthProvidersGet = () =>
   new Elysia().get('/api/assets/oauth/providers/:providersId', ({ params }) => {
-    const svg = renderOAuthProviderSvg(params.providersId);
+    const svg = OAuthProviderCatalog.renderSvg(params.providersId);
     if (!svg) throw new NotFoundError();
     return new Response(svg, {
       headers: {

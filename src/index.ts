@@ -17,6 +17,7 @@ import { githubRepositoriesGet } from './api/github/repositories/get';
 import { githubUserGet } from './api/github/user/get';
 import { internalApiKeyPermissionsGet } from './api/internal/api-keys/permissions/get';
 import { internalApiKeyPermissionsPut } from './api/internal/api-keys/[id]/permissions/put';
+import { internalAvatarProviderPost } from './api/internal/avatars/users/[userId]/providers/[providerId]/post';
 import { userAvatarProviderPost } from './api/users/[userId]/avatars/[providerId]/post';
 import { userAvatarProviderDelete } from './api/users/[userId]/avatars/[providerId]/delete';
 import { userAvatarPost } from './api/users/[userId]/avatar/post';
@@ -52,6 +53,7 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(githubRepositoriesGet(env))
   .use(userAvatarProviderPost(env))
   .use(userAvatarProviderDelete(env))
+  .use(internalAvatarProviderPost(env))
   .use(userAvatarPost(env))
   .use(userAvatarDelete(env))
   .use(internalUserLinkedProvidersGet(env))

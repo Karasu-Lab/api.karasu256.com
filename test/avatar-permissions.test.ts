@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { exportJWK, generateKeyPair, SignJWT, type JWK } from 'jose';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { internalAvatarProviderPost } from '../src/api/internal/avatars/users/[userId]/providers/[providerId]/post';
 import { userAvatarDelete } from '../src/api/users/[userId]/avatar/delete';
 import { userAvatarPost } from '../src/api/users/[userId]/avatar/post';
 import { userAvatarProviderDelete } from '../src/api/users/[userId]/avatars/[providerId]/delete';
@@ -122,7 +123,8 @@ const app = new Elysia()
   .use(userAvatarPost(env))
   .use(userAvatarDelete(env))
   .use(userAvatarProviderPost(env))
-  .use(userAvatarProviderDelete(env));
+  .use(userAvatarProviderDelete(env))
+  .use(internalAvatarProviderPost(env));
 
 const PNG_SOURCE = `data:image/png;base64,${Buffer.from('fake-png-bytes').toString('base64')}`;
 const PROVIDER_AVATAR_PATH = `u/profiles/${USER_ID}/avatars/github/avatar.png`;
@@ -270,6 +272,21 @@ describe('avatar endpoints permission handling', () => {
 
     expect(response.status).toBe(204);
     expect(objects.has(USER_AVATAR_PATH)).toBe(false);
+  });
+
+  it('stores the provider avatar through the internal endpoint used by the provider sync', async () => {
+    const response = await request(`/internal/avatars/users/${USER_ID}/providers/github`, 'POST', `Bearer ${INTERNAL_API_SECRET}`, { source: PNG_SOURCE });
+
+    expect(response.status).toBe(200);
+    expect(objects.has(PROVIDER_AVATAR_PATH)).toBe(true);
+    expect(files.has(PROVIDER_AVATAR_PATH)).toBe(true);
+  });
+
+  it('rejects non-internal callers on the internal provider avatar endpoint', async () => {
+    const response = await request(`/internal/avatars/users/${USER_ID}/providers/github`, 'POST', 'Bearer key-with-write', { source: PNG_SOURCE });
+
+    expect(response.status).toBe(401);
+    expect(objects.has(PROVIDER_AVATAR_PATH)).toBe(false);
   });
 
   it('rejects avatar deletion without any credentials', async () => {

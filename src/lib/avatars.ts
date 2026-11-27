@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { cdnUrl, getCdnFile, isAllowedUpload, sha256Hex, upsertCdnFile } from './cdn-files';
+import { cdnUrl, deleteCdnFile, getCdnFile, isAllowedUpload, sha256Hex, upsertCdnFile } from './cdn-files';
 
 export function avatarPath(userId: string, slot: string): string {
   return `u/profiles/${userId}/avatars/${slot}/avatar.png`;
@@ -35,9 +35,23 @@ export async function storeProviderAvatar(env: Env, userId: string, providerId: 
   if (!isAllowedUpload(contentType, body.byteLength)) throw new Error('Unsupported avatar image');
   const path = avatarPath(userId, providerId);
   const sha256 = await sha256Hex(body);
-  if ((await getCdnFile(env, path))?.sha256 !== sha256) {
+  if ((await getCdnFile(env, path))?.sha256 !== sha256 || !(await env.CLOUDFLARE_IMAGES.head(path))) {
     await env.CLOUDFLARE_IMAGES.put(path, body, { httpMetadata: { contentType } });
     await upsertCdnFile(env, { path, sha256, contentType, size: body.byteLength, uploaderId: userId });
   }
   return `${cdnUrl(env, path)}?v=${sha256.slice(0, 16)}`;
+}
+
+export async function deleteProviderAvatar(env: Env, userId: string, providerId: string): Promise<void> {
+  const path = avatarPath(userId, providerId);
+  await env.CLOUDFLARE_IMAGES.delete(path);
+  await deleteCdnFile(env, path);
+}
+
+export async function storeUserAvatar(env: Env, userId: string, source: string): Promise<string> {
+  return storeProviderAvatar(env, userId, 'default', source);
+}
+
+export async function deleteUserAvatar(env: Env, userId: string): Promise<void> {
+  return deleteProviderAvatar(env, userId, 'default');
 }

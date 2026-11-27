@@ -65,7 +65,7 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(uploadVerifyPost(env))
   .use(uploadVerifyGet(env))
   .use(metaGet(env))
-  .use(assetLinksGet())
+  .use(assetLinksGet(env))
   .use(apiProxyMojangGet())
   .use(apiProxyGithubGet())
   .use(apiPreviewsGet(env))

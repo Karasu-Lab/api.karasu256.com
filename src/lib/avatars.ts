@@ -47,3 +47,11 @@ export async function deleteProviderAvatar(env: Env, userId: string, providerId:
   await env.CLOUDFLARE_IMAGES.delete(path);
   await deleteCdnFile(env, path);
 }
+
+export async function storeUserAvatar(env: Env, userId: string, source: string): Promise<string> {
+  return storeProviderAvatar(env, userId, 'default', source);
+}
+
+export async function deleteUserAvatar(env: Env, userId: string): Promise<void> {
+  return deleteProviderAvatar(env, userId, 'default');
+}

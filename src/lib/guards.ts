@@ -21,6 +21,16 @@ export const requirePermission =
     if (!isPermitted(auth, permission)) throw new ForbiddenError();
   };
 
+export const requireUserPermission =
+  (env: Env, permission: string) =>
+  async ({ params, request }: { params: Record<string, string>; request: Request }) => {
+    if (isInternalCaller(request, env)) return;
+    const auth = await authenticate(request, env);
+    if (!auth) throw new UnauthorizedError();
+    if (auth.userId !== params.userId) throw new ForbiddenError();
+    if (!isPermitted(auth, permission)) throw new ForbiddenError();
+  };
+
 export function requireSession({ session }: { session: unknown }) {
   if (!session) throw new UnauthorizedError();
 }

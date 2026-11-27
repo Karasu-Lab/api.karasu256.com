@@ -77,6 +77,10 @@ export async function getCdnFile(env: Env, path: string): Promise<CdnFile | null
   };
 }
 
+export async function deleteCdnFile(env: Env, path: string): Promise<void> {
+  await env.CDN_DB.prepare('DELETE FROM cdn_files WHERE path = ?').bind(path).run();
+}
+
 export async function upsertCdnFile(env: Env, file: Pick<CdnFile, 'path' | 'sha256' | 'contentType' | 'size' | 'uploaderId'>): Promise<void> {
   const now = new Date().toISOString();
   await env.CDN_DB.prepare(

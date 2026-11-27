@@ -18,6 +18,7 @@ import { githubUserGet } from './api/github/user/get';
 import { internalApiKeyPermissionsGet } from './api/internal/api-keys/permissions/get';
 import { internalApiKeyPermissionsPut } from './api/internal/api-keys/[id]/permissions/put';
 import { internalAvatarProviderPost } from './api/internal/avatars/users/[userId]/providers/[providerId]/post';
+import { internalAvatarProviderDelete } from './api/internal/avatars/users/[userId]/providers/[providerId]/delete';
 import { internalUserAvatarUploadUrlPost } from './api/internal/users/[userId]/avatar-upload-url/post';
 import { internalUserFirebasePhotoPost } from './api/internal/users/[userId]/firebase-photo/post';
 import { internalUserFirebaseUidGet } from './api/internal/users/[userId]/firebase-uid/get';
@@ -48,6 +49,7 @@ const app = new Elysia({ adapter: CloudflareAdapter, aot: false, normalize: 'typ
   .use(githubAvatarGet(env))
   .use(githubRepositoriesGet(env))
   .use(internalAvatarProviderPost(env))
+  .use(internalAvatarProviderDelete(env))
   .use(internalUserLinkedProvidersGet(env))
   .use(internalUserLinkedProviderDelete(env))
   .use(internalUserSessionsGet(env))

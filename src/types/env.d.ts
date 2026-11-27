@@ -10,6 +10,7 @@ declare global {
     INTERNAL_API_SECRET: string;
     VERCEL_PROTECTION_BYPASS_SECRET?: string;
     GH_TOKEN?: string;
+    ANDROID_DEEPLINK_INFO?: string;
     CF_TOKEN?: string;
     CLOUDFLARE_ACCOUNT_ID?: string;
     FIREBASE_ADMIN_PROJECT_ID: string;

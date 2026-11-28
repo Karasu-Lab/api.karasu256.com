@@ -1,12 +1,19 @@
 import { z } from 'zod';
 
-const androidDeeplinkInfoSchema = z.record(
-  z.string().regex(/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/),
-  z.object({
-    fingerprints: z.array(z.string().regex(/^(?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}$/)).min(1),
-    protocols: z.array(z.string().regex(/^[A-Za-z][A-Za-z0-9+.-]*:\/\/$/)).min(1),
-  }),
-).refine((value) => Object.keys(value).length > 0, 'At least one Android app must be configured.');
+const androidAssetLinksSchema = z
+  .array(
+    z.object({
+      relation: z.array(z.string().min(1)).min(1),
+      target: z.object({
+        namespace: z.literal('android_app'),
+        package_name: z.string().regex(/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/),
+        sha256_cert_fingerprints: z
+          .array(z.string().regex(/^(?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}$/))
+          .min(1),
+      }),
+    }),
+  )
+  .min(1);
 
 function configurationError(reason: string): Response {
   return Response.json(
@@ -28,7 +35,7 @@ export function handleAndroidAssetLinks(rawConfig: string | undefined): Response
     return configurationError(`ANDROID_DEEPLINK_INFO must contain valid JSON: ${detail}`);
   }
 
-  const parsed = androidDeeplinkInfoSchema.safeParse(config);
+  const parsed = androidAssetLinksSchema.safeParse(config);
   if (!parsed.success) {
     const reason = parsed.error.issues
       .map((issue) => `${issue.path.join('.') || 'root'}: ${issue.message}`)
@@ -36,14 +43,5 @@ export function handleAndroidAssetLinks(rawConfig: string | undefined): Response
     return configurationError(`ANDROID_DEEPLINK_INFO has an invalid shape: ${reason}`);
   }
 
-  const links = Object.entries(parsed.data).map(([packageName, app]) => ({
-    relation: ['delegate_permission/common.handle_all_urls', 'delegate_permission/common.get_login_creds'],
-    target: {
-      namespace: 'android_app',
-      package_name: packageName,
-      sha256_cert_fingerprints: app.fingerprints,
-    },
-  }));
-
-  return Response.json(links, { headers: { 'cache-control': 'public, max-age=300' } });
+  return Response.json(parsed.data, { headers: { 'cache-control': 'public, max-age=300' } });
 }
